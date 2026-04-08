@@ -1,0 +1,151 @@
+.header {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  padding: 14px 0;
+  border-bottom: 1px solid #dbe2ea;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.headerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.brandArea {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.brandArea:hover {
+  opacity: 0.8;
+}
+
+.brandLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 0;
+}
+
+.brandTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.navItem {
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.navItem:hover {
+  background-color: #f8fafc;
+  border-bottom-color: #3b82f6;
+  color: #0f172a;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.langSwitch {
+  display: flex;
+  border: 1px solid #dbe2ea;
+}
+
+.langButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  border: none;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.langButtonActive {
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.logoutButton {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ef4444;
+  background-color: transparent;
+  border: 1px solid #fee2e2;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.2px;
+}
+
+.logoutButton:hover:not(:disabled) {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}
+
+.logoutButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .headerInner {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .nav {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: center;
+  }
+}

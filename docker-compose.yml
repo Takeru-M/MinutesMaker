@@ -64,8 +64,33 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- Test Database ---
+  db_test:
+    image: mysql:8.0
+    restart: no
+    container_name: mysql_db_test
+    env_file:
+      - ./.env.test
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_test_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   db_data:
+  db_test_data:
 
 networks:
   app-network:

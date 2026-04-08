@@ -1,134 +1,69 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 import { Container } from "@/components/ui/container";
-import { logout } from "@/lib/api-client";
+import { Header, Footer } from "@/components/layout";
+import { useI18n } from "@/features/i18n";
 import styles from "./home-view.module.css";
 
-const navItems = [
-  "ホーム",
-  "ブロック会議",
-  "議案投稿",
-  "お知らせ",
-  "資料置き場",
-  "利用方法",
-];
-
-const latestAgenda = [
-  {
-    title: "第1回 施設改善に関する議案",
-    meta: "2026/04/07 ・ 総務",
-  },
-  {
-    title: "新年度オリエンテーション運用議案",
-    meta: "2026/04/05 ・ 情報委員会",
-  },
-  {
-    title: "備品購入フロー見直し議案",
-    meta: "2026/04/03 ・ 会計",
-  },
-  {
-    title: "防災訓練実施計画議案",
-    meta: "2026/04/01 ・ 監察",
-  },
-];
-
-const guideLinks = [
-  "資料登録の手順",
-  "議案作成テンプレート",
-  "権限と公開範囲",
-  "更新履歴の確認方法",
-];
-
-const relatedSystems = [
-  { label: "熊野寮ホームページ", href: "https://kumano-ryo.com/" },
-  {
-    label: "寮生向け内部ページ",
-    href: "https://www.kumano-ryo.com/internal/index.html",
-  },
-  { label: "pokke 荷物の管理はこちらから", href: "https://pokke.kumano-ryo.com/" },
-  { label: "mics 入寮面接/新入寮生の管理はこちらから", href: "https://mics.kumano-ryo.com/" },
-  { label: "inspection 監察委員会の業務はこちらから", href: "https://inspection.kumano-ryo.com/" },
-  { label: "it-section 情報委員会の業務はこちらから", href: "https://kumapticon.kumano-ryo.com/" },
-];
-
 export function HomeView() {
-  const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { t } = useI18n();
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      // ログアウト成功後、ログインページへ遷移
-      router.push("/login");
-    } catch {
-      console.error("ログアウトに失敗しました");
-      setIsLoggingOut(false);
-    }
-  };
+  const latestAgenda = [
+    { title: t("home.latestAgenda.a1Title"), meta: t("home.latestAgenda.a1Meta") },
+    { title: t("home.latestAgenda.a2Title"), meta: t("home.latestAgenda.a2Meta") },
+    { title: t("home.latestAgenda.a3Title"), meta: t("home.latestAgenda.a3Meta") },
+    { title: t("home.latestAgenda.a4Title"), meta: t("home.latestAgenda.a4Meta") },
+  ];
+
+  const guideLinks = [
+    t("home.guides.g1"),
+    t("home.guides.g2"),
+    t("home.guides.g3"),
+    t("home.guides.g4"),
+  ];
+
+  const relatedSystems = [
+    { label: t("home.relatedSystems.s1"), href: "https://kumano-ryo.com/" },
+    { label: t("home.relatedSystems.s2"), href: "https://www.kumano-ryo.com/internal/index.html" },
+    { label: t("home.relatedSystems.s3"), href: "https://pokke.kumano-ryo.com/" },
+    { label: t("home.relatedSystems.s4"), href: "https://mics.kumano-ryo.com/" },
+    { label: t("home.relatedSystems.s5"), href: "https://inspection.kumano-ryo.com/" },
+    { label: t("home.relatedSystems.s6"), href: "https://kumapticon.kumano-ryo.com/" },
+  ];
 
   return (
     <div className={styles.page}>
       <div className={styles.bgGlowTop} aria-hidden="true" />
       <div className={styles.bgGlowBottom} aria-hidden="true" />
-      <header className={styles.header}>
-        <Container>
-          <div className={styles.headerInner}>
-            <div className={styles.brandArea}>
-              <p className={styles.brandLabel}>資料共有システム</p>
-              <h1 className={styles.brandTitle}>Kumano Docs Portal</h1>
-            </div>
-            <nav className={styles.nav} aria-label="グローバルナビゲーション">
-              {navItems.map((item) => (
-                <Link key={item} href="#" className={styles.navItem}>
-                  {item}
-                </Link>
-              ))}
-            </nav>
-            <button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className={styles.logoutButton}
-              aria-label="ログアウト"
-            >
-              {isLoggingOut ? "ログアウト中..." : "ログアウト"}
-            </button>
-          </div>
-        </Container>
-      </header>
+      <Header />
 
       <Container>
         <main className={styles.main}>
           <div className={styles.brandArea}>
-            <p className={styles.screenLabel}>資料共有システム</p>
+            <p className={styles.screenLabel}>{t("common.appLabel")}</p>
           </div>
           <section className={styles.hero}>
-            <p className={styles.badge}>TOP PAGE</p>
-            <h2 className={styles.title}>必要な資料に、速く、迷わずアクセス。</h2>
-            <p className={styles.description}>
-              参考サイト内の主要コンテンツを、読みやすさ重視のレイアウトへ再構成しています。
-              機能実装前の画面モックとして、ナビゲーション、議案閲覧、新着一覧、関連システム導線を搭載しています。
-            </p>
+            <p className={styles.badge}>{t("home.topPage")}</p>
+            <h2 className={styles.title}>{t("home.title")}</h2>
+            <p className={styles.description}>{t("home.description")}</p>
           </section>
 
           <section className={styles.contentGrid}>
             <article className={styles.agendaBlock}>
               <div className={styles.blockHead}>
-                <h3 className={styles.blockTitle}>議案の閲覧</h3>
+                <h3 className={styles.blockTitle}>{t("home.agendaViewTitle")}</h3>
                 <Link href="#" className={styles.inlineAction}>
-                  すべて見る
+                  {t("home.viewAll")}
                 </Link>
               </div>
               <p className={styles.blockDescription}>
-                最新の議案や検討項目を確認できます。詳細ページは後続実装で接続予定です。
+                {t("home.agendaViewDescription")}
               </p>
 
               <div className={styles.subBlock}>
-                <h4 className={styles.subTitle}>新着議案一覧</h4>
+                <h4 className={styles.subTitle}>{t("home.latestAgendaTitle")}</h4>
                 <ul className={styles.agendaList}>
                   {latestAgenda.map((agenda) => (
                     <li key={agenda.title} className={styles.agendaItem}>
@@ -144,15 +79,15 @@ export function HomeView() {
 
             <aside className={styles.sideBlocks}>
               <article className={styles.card}>
-                <h3 className={styles.cardTitle}>資料検索</h3>
-                <p className={styles.cardText}>カテゴリ・作成日・担当で資料を絞り込みます。</p>
+                <h3 className={styles.cardTitle}>{t("home.searchTitle")}</h3>
+                <p className={styles.cardText}>{t("home.searchDescription")}</p>
               </article>
               <article className={styles.card}>
-                <h3 className={styles.cardTitle}>お知らせ</h3>
-                <p className={styles.cardText}>運用変更やメンテナンス情報をここに表示します。</p>
+                <h3 className={styles.cardTitle}>{t("home.noticeTitle")}</h3>
+                <p className={styles.cardText}>{t("home.noticeDescription")}</p>
               </article>
               <article className={styles.card}>
-                <h3 className={styles.cardTitle}>運用ガイド</h3>
+                <h3 className={styles.cardTitle}>{t("home.guideTitle")}</h3>
                 <ul className={styles.guideList}>
                   {guideLinks.map((guide) => (
                     <li key={guide}>
@@ -167,7 +102,7 @@ export function HomeView() {
           </section>
 
           <section className={styles.linksSection}>
-            <h3 className={styles.linksTitle}>関連システム</h3>
+            <h3 className={styles.linksTitle}>{t("home.linksTitle")}</h3>
             <div className={styles.linksGrid}>
               {relatedSystems.map((item) => (
                 <Link key={item.href} href={item.href} target="_blank" rel="noreferrer" className={styles.linkItem}>
@@ -176,22 +111,10 @@ export function HomeView() {
               ))}
             </div>
           </section>
-
-          <section className={styles.healthSection}>
-            <Link href="/api/health" className={styles.healthLink}>
-              Health API を確認
-            </Link>
-          </section>
         </main>
       </Container>
 
-      <footer className={styles.footer}>
-        <Container>
-          <div className={styles.footerInner}>
-            <p>© 2019-2026 Kumano Dormitory IT Section</p>
-          </div>
-        </Container>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -4,22 +4,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { AuthRole } from "@/features/auth/types/auth-role";
+import { useI18n } from "@/features/i18n";
 import { apiFetch } from "@/lib/api-client";
+import { useAppDispatch } from "@/store/hooks";
+import { loginSucceeded } from "@/store/slices/auth-slice";
 import styles from "./login-view.module.css";
 
-type LoginRole = "user" | "admin";
-
 type LoginViewProps = {
-  role: LoginRole;
-};
-
-const roleLabel: Record<LoginRole, string> = {
-  user: "一般ユーザ",
-  admin: "管理者",
+  role: AuthRole;
 };
 
 export function LoginView({ role }: LoginViewProps) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { locale, setLocale, t } = useI18n();
   const isAdmin = role === "admin";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +32,7 @@ export function LoginView({ role }: LoginViewProps) {
     setSuccessMessage(null);
 
     if (!username || !password) {
-      setErrorMessage("ユーザ名とパスワードを入力してください。");
+      setErrorMessage(t("login.errors.required"));
       return;
     }
 
@@ -48,19 +47,20 @@ export function LoginView({ role }: LoginViewProps) {
       });
 
       if (!response.ok) {
-        setErrorMessage("ログインに失敗しました。認証情報を確認してください。");
+        setErrorMessage(t("login.errors.failed"));
         return;
       }
 
       const data: { message: string; role: string } = await response.json();
-      setSuccessMessage(`ログインに成功しました（${data.role}）。`);
+      setSuccessMessage(t("login.success", { role: data.role }));
+      dispatch(loginSucceeded({ role, username }));
       
       // ログイン成功時にホームページへ遷移
       setTimeout(() => {
         router.push("/");
       }, 1000);
     } catch {
-      setErrorMessage("サーバーに接続できませんでした。");
+      setErrorMessage(t("login.errors.connection"));
     } finally {
       setIsSubmitting(false);
     }
@@ -70,22 +70,28 @@ export function LoginView({ role }: LoginViewProps) {
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <p className={styles.brand}>資料共有システム</p>
+          <p className={styles.brand}>{t("common.appLabel")}</p>
+          <div>
+            <button type="button" onClick={() => setLocale("ja")} disabled={locale === "ja"}>
+              JA
+            </button>
+            <button type="button" onClick={() => setLocale("en")} disabled={locale === "en"}>
+              EN
+            </button>
+          </div>
         </div>
       </header>
 
       <main className={styles.main}>
         <section className={styles.card}>
-          <span className={styles.badge}>{roleLabel[role]}ログイン</span>
-          <h1 className={styles.title}>ようこそ、{roleLabel[role]}ページへ</h1>
-          <p className={styles.description}>
-            ユーザ名とパスワードを入力してください。
-          </p>
+          <span className={styles.badge}>{t(`login.role.${role}`)}</span>
+          <h1 className={styles.title}>{t("login.title", { role: t(`login.role.${role}`) })}</h1>
+          <p className={styles.description}>{t("login.description")}</p>
 
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.field}>
               <label htmlFor={`${role}-username`} className={styles.label}>
-                ユーザ名
+                {t("login.labels.username")}
               </label>
               <input
                 id={`${role}-username`}
@@ -99,7 +105,7 @@ export function LoginView({ role }: LoginViewProps) {
 
             <div className={styles.field}>
               <label htmlFor={`${role}-password`} className={styles.label}>
-                パスワード
+                {t("login.labels.password")}
               </label>
               <input
                 id={`${role}-password`}
@@ -115,18 +121,18 @@ export function LoginView({ role }: LoginViewProps) {
             {successMessage ? <p className={styles.successMessage}>{successMessage}</p> : null}
 
             <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-              {isSubmitting ? "認証中..." : "ログイン"}
+              {isSubmitting ? t("login.submitting") : t("login.submit")}
             </button>
           </form>
 
           <div className={styles.switchRow}>
             {isAdmin ? (
               <Link href="/login" className={styles.switchLink}>
-                一般ユーザはこちら
+                {t("login.switchToUser")}
               </Link>
             ) : (
               <Link href="/admin" className={styles.switchLink}>
-                サイト管理者はこちら
+                {t("login.switchToAdmin")}
               </Link>
             )}
           </div>
@@ -135,7 +141,7 @@ export function LoginView({ role }: LoginViewProps) {
 
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <p className={styles.footerText}>© 2019-2026 Kumano Dormitory IT Section</p>
+          <p className={styles.footerText}>{t("common.footerText")}</p>
         </div>
       </footer>
     </div>

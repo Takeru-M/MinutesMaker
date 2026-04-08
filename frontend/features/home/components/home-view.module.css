@@ -42,95 +42,6 @@
   padding: 28px 0 24px;
 }
 
-.header {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  padding: 14px 0;
-  border-bottom: 1px solid #dbe2ea;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
-}
-
-.headerInner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.brandArea {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.brandLabel {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #334155;
-}
-
-.brandTitle {
-  margin: 4px 0 0;
-  font-size: 1.35rem;
-  color: #0b1220;
-}
-
-.screenLabel {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #475569;
-}
-
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  flex: 1;
-}
-
-.logoutButton {
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #ffffff;
-  background: #ef4444;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
-  white-space: nowrap;
-}
-
-.logoutButton:hover:not(:disabled) {
-  background: #dc2626;
-}
-
-.logoutButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.navItem {
-  text-decoration: none;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #1e293b;
-  background: #ffffff;
-  border: 1px solid #dbe2ea;
-  border-radius: 9999px;
-  padding: 7px 12px;
-}
-
-.navItem:hover {
-  border-color: #94a3b8;
-  background: #f8fafc;
-  color: #0f172a;
-}
-
 .hero,
 .contentGrid,
 .linksSection,
@@ -357,22 +268,6 @@
 
 .healthLink:hover {
   background: #1e293b;
-}
-
-.footer {
-  margin-top: auto;
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  border-top: 1px solid #dbe2ea;
-  background: rgba(255, 255, 255, 0.96);
-}
-
-.footerInner {
-  padding: 14px 0;
-  color: #475569;
-  font-size: 0.85rem;
-  text-align: center;
 }
 
 @media (max-width: 900px) {

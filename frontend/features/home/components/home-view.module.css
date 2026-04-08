@@ -1,0 +1,398 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 20% 10%, #dbeafe 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, #fde68a 0%, transparent 42%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  overflow: hidden;
+}
+
+.bgGlowTop,
+.bgGlowBottom {
+  position: absolute;
+  pointer-events: none;
+  width: 420px;
+  height: 420px;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+
+.bgGlowTop {
+  top: -140px;
+  right: -80px;
+  background: #60a5fa;
+}
+
+.bgGlowBottom {
+  left: -120px;
+  bottom: -160px;
+  background: #f59e0b;
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  padding: 28px 0 24px;
+}
+
+.header {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 14px 0;
+  border-bottom: 1px solid #dbe2ea;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.headerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.brandArea {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.brandLabel {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.brandTitle {
+  margin: 4px 0 0;
+  font-size: 1.35rem;
+  color: #0b1220;
+}
+
+.screenLabel {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.logoutButton {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: #ef4444;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+  white-space: nowrap;
+}
+
+.logoutButton:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.logoutButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.navItem {
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-radius: 9999px;
+  padding: 7px 12px;
+}
+
+.navItem:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.hero,
+.contentGrid,
+.linksSection,
+.healthSection {
+  border: 1px solid #dbe2ea;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.hero {
+  padding: 28px;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #e2e8f0;
+  margin-bottom: 14px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.description {
+  margin-top: 14px;
+  max-width: 740px;
+  color: #1e293b;
+  line-height: 1.8;
+}
+
+.healthLink,
+.linkItem {
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.contentGrid {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+}
+
+.agendaBlock {
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  padding: 18px;
+}
+
+.blockHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.blockTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.inlineAction {
+  text-decoration: none;
+  font-size: 0.84rem;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.inlineAction:hover {
+  color: #1d4ed8;
+}
+
+.blockDescription {
+  margin: 10px 0 0;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.subBlock {
+  margin-top: 16px;
+  border-radius: 12px;
+  border: 1px solid #dbe2ea;
+  background: #f8fafc;
+  padding: 14px;
+}
+
+.subTitle {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.agendaList {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.agendaItem {
+  border-radius: 10px;
+  border: 1px solid #dbe2ea;
+  background: #ffffff;
+  padding: 10px 12px;
+}
+
+.agendaLink {
+  text-decoration: none;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.agendaLink:hover {
+  color: #2563eb;
+}
+
+.agendaMeta {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.sideBlocks {
+  display: grid;
+  gap: 10px;
+}
+
+.card {
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  padding: 18px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.cardText {
+  margin-top: 8px;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.guideList {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.guideLink {
+  color: #334155;
+  text-decoration: none;
+}
+
+.guideLink:hover {
+  color: #1d4ed8;
+}
+
+.linksSection {
+  padding: 20px;
+}
+
+.linksTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #0f172a;
+}
+
+.linksGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.linkItem {
+  border-radius: 12px;
+  border: 1px solid #dbe2ea;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 12px 14px;
+  font-weight: 500;
+}
+
+.linkItem:hover {
+  border-color: #94a3b8;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.healthSection {
+  padding: 16px 20px;
+}
+
+.healthLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #1e293b;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.healthLink:hover {
+  background: #1e293b;
+}
+
+.footer {
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  border-top: 1px solid #dbe2ea;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.footerInner {
+  padding: 14px 0;
+  color: #475569;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .linksGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .hero,
+  .contentGrid,
+  .linksSection {
+    padding: 16px;
+  }
+
+  .linksGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -54,7 +54,7 @@ export function HomeView() {
             <article className={styles.agendaBlock}>
               <div className={styles.blockHead}>
                 <h3 className={styles.blockTitle}>{t("home.agendaViewTitle")}</h3>
-                <Link href="#" className={styles.inlineAction}>
+                <Link href="/meeting-schedule" className={styles.inlineAction}>
                   {t("home.viewAll")}
                 </Link>
               </div>
@@ -84,7 +84,9 @@ export function HomeView() {
               </article>
               <article className={styles.card}>
                 <h3 className={styles.cardTitle}>{t("home.noticeTitle")}</h3>
-                <p className={styles.cardText}>{t("home.noticeDescription")}</p>
+                <Link href="/notice" className={styles.cardLink}>
+                  <p className={styles.cardText}>{t("home.noticeDescription")}</p>
+                </Link>
               </article>
               <article className={styles.card}>
                 <h3 className={styles.cardTitle}>{t("home.guideTitle")}</h3>

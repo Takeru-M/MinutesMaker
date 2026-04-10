@@ -1,0 +1,342 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 20% 10%, #dbeafe 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, #fde68a 0%, transparent 42%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  overflow: hidden;
+}
+
+.bgGlowTop,
+.bgGlowBottom {
+  position: absolute;
+  pointer-events: none;
+  width: 420px;
+  height: 420px;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+
+.bgGlowTop {
+  top: -140px;
+  right: -80px;
+  background: #60a5fa;
+}
+
+.bgGlowBottom {
+  left: -120px;
+  bottom: -160px;
+  background: #f59e0b;
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  padding: 28px 0 24px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.breadcrumbLink {
+  color: #3b82f6;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumbLink:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.breadcrumbSeparator {
+  color: #cbd5e1;
+}
+
+.breadcrumbCurrent {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.hero,
+.listSection {
+  border: 1px solid #dbe2ea;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.hero {
+  display: grid;
+  gap: 12px;
+  padding: 28px;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #e2e8f0;
+  margin: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.description {
+  margin: 0;
+  max-width: 740px;
+  color: #1e293b;
+  line-height: 1.8;
+}
+
+.listSection {
+  padding: 20px;
+}
+
+.searchSection {
+  border: 1px solid #dbe2ea;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  padding: 20px;
+}
+
+.searchTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.searchForm {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.searchField {
+  display: grid;
+  gap: 6px;
+}
+
+.searchLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.searchInput {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.searchActions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.searchPrimaryButton,
+.searchSecondaryButton {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.searchPrimaryButton {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.searchPrimaryButton:hover {
+  background: #1d4ed8;
+}
+
+.searchSecondaryButton {
+  background: #ffffff;
+  color: #334155;
+  border-color: #dbe2ea;
+}
+
+.searchSecondaryButton:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.sectionMeta {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.emptyState {
+  border: 1px solid #dbe2ea;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  color: #64748b;
+}
+
+.scheduleList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.scheduleItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.scheduleContent {
+  min-width: 0;
+}
+
+.scheduleMeta {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0284c7;
+}
+
+.scheduleTitle {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.scheduleSummary {
+  margin: 8px 0 0;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.scheduleLocation {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.paginationButton {
+  min-width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.paginationButton:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.paginationButtonActive {
+  border-color: #3b82f6;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 22px;
+  }
+
+  .searchForm {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader,
+  .scheduleItem {
+    flex-direction: column;
+  }
+
+  .scheduleLocation {
+    align-self: flex-start;
+  }
+}

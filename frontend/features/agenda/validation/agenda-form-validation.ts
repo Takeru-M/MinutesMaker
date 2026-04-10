@@ -9,7 +9,12 @@ export const validateRequiredAgendaFields = (formData: AgendaFormData): AgendaVa
   if (!formData.responsible.trim()) errors.responsible = "agendaForm.errors.responsibleRequired";
   if (!formData.password.trim()) errors.password = "agendaForm.errors.passwordRequired";
   if (!formData.passwordConfirm.trim()) errors.passwordConfirm = "agendaForm.errors.passwordConfirmRequired";
-  if (!formData.body.trim()) errors.body = "agendaForm.errors.bodyRequired";
+  if ((formData.types.includes("voting") || formData.types.includes("voting-planned")) && !formData.votingItems.trim()) {
+    errors.votingItems = "agendaForm.errors.votingItemsRequired";
+  }
+  if (!formData.body.trim() && !formData.pdfFile) {
+    errors.body = "agendaForm.errors.bodyOrPdfRequired";
+  }
 
   return errors;
 };

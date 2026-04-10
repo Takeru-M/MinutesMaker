@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useI18n } from "@/features/i18n";
 import { AgendaFormData } from "@/features/agenda/types/agenda-form";
@@ -22,6 +22,15 @@ const AGENDA_TYPES = [
   { id: "voting-planned", labelKey: "agendaForm.types.votingPlanned" },
 ];
 
+const MOCK_AGENDA_DATES = [
+  { value: "2026-04-06", label: "4月6日のブロック会議" },
+  { value: "2026-04-13", label: "4月13日のブロック会議" },
+  { value: "2026-04-20", label: "4月20日のブロック会議" },
+  { value: "2026-04-27", label: "4月27日のブロック会議" },
+];
+
+const isVotingRelatedTypeSelected = (types: string[]) => types.includes("voting") || types.includes("voting-planned");
+
 export function AgendaSubmitForm() {
   const { t } = useI18n();
   const dispatch = useAppDispatch();
@@ -35,34 +44,127 @@ export function AgendaSubmitForm() {
     password: "",
     passwordConfirm: "",
     body: "",
+    pdfFile: null,
     votingItems: "",
   };
 
   const [formData, setFormData] = useState<AgendaFormData>(initialFormData);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfTypeError, setPdfTypeError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfDialogRef = useRef<HTMLDialogElement>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    if (name === "body") {
+      dispatch(clearAgendaFieldError("body"));
+    }
+
     if (name in formData) {
       dispatch(clearAgendaFieldError(name as keyof AgendaFormData));
     }
   };
 
-  const handleTypeChange = (typeId: string) => {
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] ?? null;
+
+    if (!selectedFile) {
+      setFormData((prev) => ({ ...prev, pdfFile: null }));
+      return;
+    }
+
+    const isPdf = selectedFile.type === "application/pdf" || selectedFile.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      setPdfTypeError("agendaForm.errors.pdfOnly");
+      setFormData((prev) => ({ ...prev, pdfFile: null }));
+      e.target.value = "";
+      return;
+    }
+
+    setPdfTypeError(null);
     setFormData((prev) => ({
       ...prev,
-      types: prev.types.includes(typeId)
-        ? prev.types.filter((t) => t !== typeId)
-        : [...prev.types, typeId],
+      pdfFile: selectedFile,
     }));
+    dispatch(clearAgendaFieldError("body"));
+  };
+
+  const handleRemovePdf = () => {
+    setFormData((prev) => ({ ...prev, pdfFile: null }));
+    setPdfPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleOpenPdfPreview = () => {
+    if (!formData.pdfFile) {
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(formData.pdfFile);
+    setPdfPreviewUrl(objectUrl);
+    pdfDialogRef.current?.showModal();
+  };
+
+  const handlePdfStatusClick = () => {
+    if (formData.pdfFile) {
+      handleOpenPdfPreview();
+      return;
+    }
+
+    fileInputRef.current?.click();
+  };
+
+  const handleClosePdfPreview = () => {
+    if (pdfDialogRef.current?.open) {
+      pdfDialogRef.current.close();
+    }
+    setPdfPreviewUrl(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pdfPreviewUrl) {
+        URL.revokeObjectURL(pdfPreviewUrl);
+      }
+    };
+  }, [pdfPreviewUrl]);
+
+  const handleTypeChange = (typeId: string) => {
+    setFormData((prev) => {
+      const nextTypes = prev.types.includes(typeId)
+        ? prev.types.filter((t) => t !== typeId)
+        : [...prev.types, typeId];
+
+      if (!isVotingRelatedTypeSelected(nextTypes)) {
+        dispatch(clearAgendaFieldError("votingItems"));
+      }
+
+      return {
+        ...prev,
+        types: nextTypes,
+      };
+    });
     dispatch(clearAgendaFieldError("types"));
   };
 
   const handleReset = () => {
     setFormData(initialFormData);
+    setPdfPreviewUrl(null);
+    setPdfTypeError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (pdfDialogRef.current?.open) {
+      pdfDialogRef.current.close();
+    }
     dispatch(resetAgendaValidation());
   };
 
@@ -90,14 +192,23 @@ export function AgendaSubmitForm() {
             <label htmlFor="date" className={styles.label}>
               {t("agendaForm.labels.date")} <span className={styles.required}>*</span>
             </label>
-            <input
-              type="datetime-local"
+            <select
               id="date"
               name="date"
               value={formData.date}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.date ? styles.inputError : ""}`}
-            />
+            >
+              <option value="" disabled>
+                {t("agendaForm.placeholders.date")}
+              </option>
+              {MOCK_AGENDA_DATES.map((agendaDate) => (
+                <option key={agendaDate.value} value={agendaDate.value}>
+                  {agendaDate.label}
+                </option>
+              ))}
+            </select>
+            <p className={styles.helperText}>{t("agendaForm.hints.dateMock")}</p>
             {errors.date && <p className={styles.errorText}>{t(errors.date)}</p>}
           </div>
 
@@ -192,9 +303,13 @@ export function AgendaSubmitForm() {
           </div>
 
           {/* 本文 */}
+          <div className={styles.label}>
+            {t("agendaForm.labels.bodyOrPdf")} <span className={styles.required}>*</span>
+          </div>
+
           <div className={styles.formGroup}>
             <label htmlFor="body" className={styles.label}>
-              {t("agendaForm.labels.body")} <span className={styles.required}>*</span>
+              {t("agendaForm.labels.body")}
             </label>
             <textarea
               id="body"
@@ -205,24 +320,57 @@ export function AgendaSubmitForm() {
               rows={8}
               className={`${styles.textarea} ${errors.body ? styles.inputError : ""}`}
             />
+          </div>
+
+          {/* PDFアップロード */}
+          <div className={styles.formGroup}>
+            <label htmlFor="pdfFile" className={styles.label}>
+              {t("agendaForm.labels.pdf")}
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              id="pdfFile"
+              name="pdfFile"
+              accept="application/pdf,.pdf"
+              onChange={handlePdfChange}
+              className={styles.visuallyHiddenInput}
+            />
+            <button type="button" className={styles.fileSelectButton} onClick={handlePdfStatusClick}>
+              {formData.pdfFile ? formData.pdfFile.name : "ファイルを選択"}
+            </button>
+            <p className={styles.fileHint}>{t("agendaForm.placeholders.pdf")}</p>
+
+            {formData.pdfFile && (
+              <div className={styles.fileActions}>
+                <button type="button" className={styles.removeFileButton} onClick={handleRemovePdf}>
+                  {t("agendaForm.buttons.removePdf")}
+                </button>
+              </div>
+            )}
+
+            {pdfTypeError && <p className={styles.errorText}>{t(pdfTypeError)}</p>}
             {errors.body && <p className={styles.errorText}>{t(errors.body)}</p>}
           </div>
 
           {/* 採決項目 */}
-          <div className={styles.formGroup}>
-            <label htmlFor="votingItems" className={styles.label}>
-              {t("agendaForm.labels.votingItems")}
-            </label>
-            <textarea
-              id="votingItems"
-              name="votingItems"
-              value={formData.votingItems}
-              onChange={handleInputChange}
-              placeholder={t("agendaForm.placeholders.votingItems")}
-              rows={5}
-              className={styles.textarea}
-            />
-          </div>
+          {isVotingRelatedTypeSelected(formData.types) && (
+            <div className={styles.formGroup}>
+              <label htmlFor="votingItems" className={styles.label}>
+                {t("agendaForm.labels.votingItems")} <span className={styles.required}>*</span>
+              </label>
+              <textarea
+                id="votingItems"
+                name="votingItems"
+                value={formData.votingItems}
+                onChange={handleInputChange}
+                placeholder={t("agendaForm.placeholders.votingItems")}
+                rows={5}
+                className={`${styles.textarea} ${errors.votingItems ? styles.inputError : ""}`}
+              />
+              {errors.votingItems && <p className={styles.errorText}>{t(errors.votingItems)}</p>}
+            </div>
+          )}
 
           {/* 過去のブロック会議の議案 */}
           <div className={styles.formGroup}>
@@ -251,6 +399,16 @@ export function AgendaSubmitForm() {
           </div>
         </form>
       </div>
+
+      <dialog ref={pdfDialogRef} className={styles.previewDialog} onClose={handleClosePdfPreview}>
+        <div className={styles.previewDialogHeader}>
+          <strong>{formData.pdfFile?.name}</strong>
+          <button type="button" className={styles.previewCloseButton} onClick={handleClosePdfPreview}>
+            {t("agendaForm.buttons.closePreview")}
+          </button>
+        </div>
+        {pdfPreviewUrl && <iframe src={pdfPreviewUrl} className={styles.previewFrame} title="PDF Preview" />}
+      </dialog>
     </div>
   );
 }

@@ -6,6 +6,7 @@ export type AgendaFormData = {
   password: string;
   passwordConfirm: string;
   body: string;
+  pdfFile: File | null;
   votingItems: string;
 };
 

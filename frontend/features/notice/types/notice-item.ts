@@ -3,5 +3,5 @@ export type NoticeItem = {
   publishedAt: string;
   source: string;
   title: string;
-  summary: string;
+  summary?: string;
 };

@@ -1,0 +1,9 @@
+.itemLink {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.itemLink:hover {
+  text-decoration: none;
+}

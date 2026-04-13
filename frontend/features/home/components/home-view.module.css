@@ -83,6 +83,61 @@
   line-height: 1.8;
 }
 
+.heroEyebrow {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.heroActions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.meetingActionCard {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  width: min(420px, 100%);
+  border-radius: 12px;
+  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1e3a8a;
+  text-decoration: none;
+  padding: 12px 42px 12px 14px;
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.16);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.meetingActionCard:hover {
+  transform: translateY(-1px);
+  border-color: #93c5fd;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.22);
+}
+
+.meetingActionMain {
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.meetingActionSub {
+  font-size: 0.78rem;
+  color: #1d4ed8;
+}
+
+.meetingActionArrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
 .healthLink,
 .linkItem {
   text-decoration: none;
@@ -101,6 +156,8 @@
   background: #ffffff;
   border: 1px solid #dbe2ea;
   padding: 18px;
+  display: flex;
+  flex-direction: column;
 }
 
 .blockHead {
@@ -139,6 +196,9 @@
   border: 1px solid #dbe2ea;
   background: #f8fafc;
   padding: 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .subTitle {
@@ -153,6 +213,7 @@
   margin: 10px 0 0;
   display: grid;
   gap: 10px;
+  align-content: start;
 }
 
 .agendaItem {
@@ -163,17 +224,23 @@
 }
 
 .agendaLink {
+  display: block;
   text-decoration: none;
   color: #0f172a;
-  font-weight: 600;
 }
 
 .agendaLink:hover {
   color: #2563eb;
 }
 
+.agendaTitle {
+  display: block;
+  font-weight: 600;
+}
+
 .agendaMeta {
-  margin: 4px 0 0;
+  display: block;
+  margin-top: 4px;
   font-size: 0.82rem;
   color: #64748b;
 }
@@ -181,13 +248,15 @@
 .sideBlocks {
   display: grid;
   gap: 10px;
+  grid-template-rows: 2fr 1fr;
 }
 
-.card {
+.noticeCard {
   border-radius: 12px;
   background: #ffffff;
   border: 1px solid #dbe2ea;
   padding: 18px;
+  grid-row: span 2;
 }
 
 .cardTitle {
@@ -211,6 +280,13 @@
   text-decoration: underline;
 }
 
+.card {
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  padding: 18px;
+}
+
 .guideList {
   margin: 8px 0 0;
   padding-left: 18px;
@@ -219,12 +295,13 @@
 }
 
 .guideLink {
-  color: #334155;
+  color: #475569;
   text-decoration: none;
+  line-height: 1.7;
 }
 
 .guideLink:hover {
-  color: #1d4ed8;
+  text-decoration: underline;
 }
 
 .linksSection {

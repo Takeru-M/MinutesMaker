@@ -9,10 +9,9 @@ export const filterNoticeItems = (items: NoticeItem[], filters: { date: string; 
 
   const mappedItems: ContentListItem[] = items.map((item) => ({
     id: item.id,
-    date: item.publishedAt,
+    date: item.publishedAt.includes("T") ? item.publishedAt.slice(0, 10) : item.publishedAt,
     source: item.source,
     title: item.title,
-    summary: item.summary,
   }));
 
   return mappedItems.filter((item) => {

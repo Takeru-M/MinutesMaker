@@ -4,6 +4,7 @@ export const validateRequiredAgendaFields = (formData: AgendaFormData): AgendaVa
   const errors: AgendaValidationErrors = {};
 
   if (!formData.date.trim()) errors.date = "agendaForm.errors.dateRequired";
+  if (!formData.meetingType.trim()) errors.meetingType = "agendaForm.errors.meetingTypeRequired";
   if (formData.types.length === 0) errors.types = "agendaForm.errors.typesRequired";
   if (!formData.title.trim()) errors.title = "agendaForm.errors.titleRequired";
   if (!formData.responsible.trim()) errors.responsible = "agendaForm.errors.responsibleRequired";

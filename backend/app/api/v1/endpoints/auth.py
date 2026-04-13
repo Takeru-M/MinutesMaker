@@ -1,8 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
 
+from app.core.auth_dependencies import get_current_user
 from app.core.config import settings
+from app.core.constants import (
+    LEGACY_ROLE_ADMIN,
+    LEGACY_ROLE_USER,
+    ROLE_ADMIN,
+    ROLE_AUDITOR,
+    ROLE_GUEST_USER,
+    ROLE_ORG_ADMIN,
+    ROLE_USER,
+)
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -15,7 +24,6 @@ from app.db.session import get_session
 from app.schemas.auth import CurrentUserResponse, LoginRequest, LoginResponse, RefreshResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-security = HTTPBearer(auto_error=False)
 
 
 def _set_auth_cookies(response: Response, *, access_token: str, refresh_token: str) -> None:
@@ -44,13 +52,18 @@ def _clear_auth_cookies(response: Response) -> None:
     response.delete_cookie(key=settings.refresh_cookie_name, path="/api/v1/auth")
 
 
-def _login_by_role(role: str, payload: LoginRequest, db: Session, response: Response) -> LoginResponse:
+def _login_by_roles(
+    allowed_roles: tuple[str, ...],
+    payload: LoginRequest,
+    db: Session,
+    response: Response,
+) -> LoginResponse:
     user = get_user_by_username(db, payload.username)
 
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    if user.role != role:
+    if user.role not in allowed_roles:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Role mismatch")
 
     if not verify_password(payload.password, user.password_hash):
@@ -68,7 +81,12 @@ def login_user(
     response: Response,
     db: Session = Depends(get_session),
 ) -> LoginResponse:
-    return _login_by_role("user", payload, db, response)
+    return _login_by_roles(
+        (ROLE_USER, ROLE_GUEST_USER, ROLE_AUDITOR, LEGACY_ROLE_USER),
+        payload,
+        db,
+        response,
+    )
 
 
 @router.post("/login/admin", response_model=LoginResponse)
@@ -77,7 +95,29 @@ def login_admin(
     response: Response,
     db: Session = Depends(get_session),
 ) -> LoginResponse:
-    return _login_by_role("admin", payload, db, response)
+    return _login_by_roles((ROLE_ADMIN, ROLE_ORG_ADMIN, LEGACY_ROLE_ADMIN), payload, db, response)
+
+
+@router.post("/login", response_model=LoginResponse)
+def login_any(
+    payload: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_session),
+) -> LoginResponse:
+    return _login_by_roles(
+        (
+            ROLE_ADMIN,
+            ROLE_ORG_ADMIN,
+            ROLE_USER,
+            ROLE_GUEST_USER,
+            ROLE_AUDITOR,
+            LEGACY_ROLE_ADMIN,
+            LEGACY_ROLE_USER,
+        ),
+        payload,
+        db,
+        response,
+    )
 
 
 @router.post("/refresh", response_model=RefreshResponse)
@@ -119,31 +159,6 @@ def logout(response: Response) -> dict[str, str]:
 
 @router.get("/me", response_model=CurrentUserResponse)
 def me(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials | None = Depends(security),
-    db: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
 ) -> CurrentUserResponse:
-    token = request.cookies.get(settings.access_cookie_name)
-
-    if token is None and credentials is not None:
-        token = credentials.credentials
-
-    if token is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-
-    try:
-        payload = decode_token(token)
-        validate_token_type(payload, "access")
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
-
-    username = payload.get("sub")
-
-    if not username:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-
-    user = get_user_by_username(db, username)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-
-    return CurrentUserResponse(id=user.id or 0, username=user.username, role=user.role)
+    return CurrentUserResponse(id=current_user.id or 0, username=current_user.username, role=current_user.role)

@@ -1,30 +1,38 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
-import { AuthRole } from "@/features/auth/types/auth-role";
 import { useI18n } from "@/features/i18n";
+import type { AuthRole, LoginResponse } from "@/lib/api-types";
 import { apiFetch } from "@/lib/api-client";
 import { useAppDispatch } from "@/store/hooks";
 import { loginSucceeded } from "@/store/slices/auth-slice";
 import styles from "./login-view.module.css";
 
-type LoginViewProps = {
-  role: AuthRole;
-};
-
-export function LoginView({ role }: LoginViewProps) {
+export function LoginView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const { locale, setLocale, t } = useI18n();
-  const isAdmin = role === "admin";
+  const redirectTarget = searchParams.get("redirect");
+  const agendaSubmitNotice = searchParams.get("notice") === "agenda-submit";
+  const postLoginRedirect = redirectTarget ?? (agendaSubmitNotice ? "/agenda/submit" : "/");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const loginWithRole = async (role: AuthRole) => {
+    return apiFetch(`/api/v1/auth/login/${role}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, password }),
+    });
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,26 +46,20 @@ export function LoginView({ role }: LoginViewProps) {
 
     setIsSubmitting(true);
     try {
-      const response = await apiFetch(`/api/v1/auth/login/${role}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
+      const userResponse = await loginWithRole("user");
+      const response = userResponse.status === 403 ? await loginWithRole("admin") : userResponse;
 
       if (!response.ok) {
         setErrorMessage(t("login.errors.failed"));
         return;
       }
 
-      const data: { message: string; role: string } = await response.json();
+      const data = (await response.json()) as LoginResponse;
       setSuccessMessage(t("login.success", { role: data.role }));
-      dispatch(loginSucceeded({ role, username }));
-      
-      // ログイン成功時にホームページへ遷移
+      dispatch(loginSucceeded({ role: data.role, username }));
+
       setTimeout(() => {
-        router.push("/");
+        router.push(postLoginRedirect);
       }, 1000);
     } catch {
       setErrorMessage(t("login.errors.connection"));
@@ -84,17 +86,23 @@ export function LoginView({ role }: LoginViewProps) {
 
       <main className={styles.main}>
         <section className={styles.card}>
-          <span className={styles.badge}>{t(`login.role.${role}`)}</span>
-          <h1 className={styles.title}>{t("login.title", { role: t(`login.role.${role}`) })}</h1>
+          <h1 className={styles.title}>{t("login.title")}</h1>
           <p className={styles.description}>{t("login.description")}</p>
+          {agendaSubmitNotice ? (
+            <p className={styles.noticeMessage}>
+              {locale === "ja"
+                ? "議案投稿には個人アカウントでのログインが必要です。個人アカウントでログインしてください。"
+                : "Submitting agendas requires an individual account. Please sign in with your individual account."}
+            </p>
+          ) : null}
 
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.field}>
-              <label htmlFor={`${role}-username`} className={styles.label}>
+              <label htmlFor="login-username" className={styles.label}>
                 {t("login.labels.username")}
               </label>
               <input
-                id={`${role}-username`}
+                id="login-username"
                 name="username"
                 type="text"
                 className={styles.input}
@@ -104,11 +112,11 @@ export function LoginView({ role }: LoginViewProps) {
             </div>
 
             <div className={styles.field}>
-              <label htmlFor={`${role}-password`} className={styles.label}>
+              <label htmlFor="login-password" className={styles.label}>
                 {t("login.labels.password")}
               </label>
               <input
-                id={`${role}-password`}
+                id="login-password"
                 name="password"
                 type="password"
                 className={styles.input}
@@ -124,18 +132,6 @@ export function LoginView({ role }: LoginViewProps) {
               {isSubmitting ? t("login.submitting") : t("login.submit")}
             </button>
           </form>
-
-          <div className={styles.switchRow}>
-            {isAdmin ? (
-              <Link href="/login" className={styles.switchLink}>
-                {t("login.switchToUser")}
-              </Link>
-            ) : (
-              <Link href="/admin" className={styles.switchLink}>
-                {t("login.switchToAdmin")}
-              </Link>
-            )}
-          </div>
         </section>
       </main>
 

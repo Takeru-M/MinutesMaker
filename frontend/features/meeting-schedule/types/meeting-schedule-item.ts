@@ -1,8 +1,10 @@
 export type MeetingScheduleItem = {
-  id: string;
+  id: number;
   title: string;
   scheduledAt: string;
   department: string;
   location: string;
-  summary: string;
+  meetingType?: string;
+  meetingScale?: string;
+  summary?: string;
 };

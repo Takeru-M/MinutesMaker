@@ -275,11 +275,10 @@ export const meetingScheduleItems = meetingTemplates.map((template, index) => {
   scheduledAt.setDate(baseScheduledAt.getDate() - index);
 
   return {
-    id: `meeting-schedule-${index + 1}`,
+    id: index + 1,
     title: template.title,
     scheduledAt: scheduledAt.toISOString(),
     department: template.department,
     location: template.location,
-    summary: template.summary,
   } satisfies MeetingScheduleItem;
 });

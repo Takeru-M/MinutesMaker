@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { AuthBootstrap } from "@/components/providers/auth-bootstrap";
 import { ReduxProvider } from "@/components/providers/redux-provider";
 import { siteConfig } from "@/constants/site";
 import { I18nProvider } from "@/features/i18n";
@@ -34,7 +35,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ReduxProvider>
-          <I18nProvider>{children}</I18nProvider>
+          <I18nProvider>
+            <AuthBootstrap>{children}</AuthBootstrap>
+          </I18nProvider>
         </ReduxProvider>
       </body>
     </html>

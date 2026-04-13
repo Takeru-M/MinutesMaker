@@ -1,26 +1,78 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { ContentListItemCard, ContentListView } from "@/features/content-list/components";
 import { CONTENT_LIST_ITEMS_PER_PAGE, getContentListPage } from "@/features/content-list/utils/get-content-list-page";
 import { useI18n } from "@/features/i18n";
 import { MeetingScheduleSearchForm } from "@/features/meeting-schedule/components/meeting-schedule-search-form";
 import { meetingScheduleItems } from "@/features/meeting-schedule/data/meeting-schedule-items";
+import { MeetingScheduleItem } from "@/features/meeting-schedule/types/meeting-schedule-item";
 import { filterMeetingScheduleItems } from "@/features/meeting-schedule/utils/filter-meeting-schedule-items";
+import type { MeetingListItemResponse } from "@/lib/api-types";
+import { apiFetch } from "@/lib/api-client";
+import styles from "./meeting-schedule-view.module.css";
 
 type MeetingScheduleListItem = {
-  id: string;
+  id: number;
   date: string;
   source: string;
   title: string;
-  summary: string;
   location: string;
+  meetingScale?: string;
 };
 
 export function MeetingScheduleView() {
   const { locale, t } = useI18n();
   const searchParams = useSearchParams();
+  const [items, setItems] = useState<MeetingScheduleItem[]>(meetingScheduleItems);
+
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      try {
+        const response = await apiFetch("/api/v1/meetings?limit=500");
+        if (!response.ok) {
+          return;
+        }
+
+        const meetings = (await response.json()) as MeetingListItemResponse[];
+        if (meetings.length === 0) {
+          return;
+        }
+
+        const toMeetingTypeLabel = (meetingType: string) => {
+          if (meetingType === "large") {
+            return t("agendaForm.meetingTypes.large");
+          }
+          if (meetingType === "block") {
+            return t("agendaForm.meetingTypes.block");
+          }
+          if (meetingType === "annual") {
+            return t("agendaForm.meetingTypes.annual");
+          }
+          return meetingType;
+        };
+
+        setItems(
+          meetings.map((meeting) => ({
+            id: meeting.id,
+            title: meeting.title,
+            scheduledAt: meeting.scheduled_at,
+            department: toMeetingTypeLabel(meeting.meeting_type),
+            location: meeting.location ?? "-",
+            meetingType: meeting.meeting_type,
+            meetingScale: meeting.meeting_scale,
+          })),
+        );
+      } catch (error) {
+        console.error("Failed to fetch meetings:", error);
+      }
+    };
+
+    fetchMeetings();
+  }, [t]);
 
   const filters = {
     date: searchParams.get("date") ?? "",
@@ -28,14 +80,14 @@ export function MeetingScheduleView() {
     title: searchParams.get("title") ?? "",
   };
 
-  const filteredItems: MeetingScheduleListItem[] = filterMeetingScheduleItems(meetingScheduleItems, filters).map(
+  const filteredItems: MeetingScheduleListItem[] = filterMeetingScheduleItems(items, filters).map(
     (item) => ({
       id: item.id,
       date: item.scheduledAt,
       source: item.department,
       title: item.title,
-      summary: item.summary,
       location: item.location,
+      meetingScale: item.meetingScale,
     }),
   );
   const requestedPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
@@ -70,14 +122,18 @@ export function MeetingScheduleView() {
       searchForm={<MeetingScheduleSearchForm initialFilters={filters} />}
       emptyState={t("meetingScheduleView.noResults")}
       pageItems={pageItems.map((item) => ({
-        id: item.id,
+        id: String(item.id),
         rendered: (
-          <ContentListItemCard
-            meta={`${dateFormatter.format(new Date(item.date))} ・ ${item.source}`}
-            title={item.title}
-            summary={item.summary}
-            trailing={item.location}
-          />
+          <Link
+            href={item.meetingScale === "large" ? `/meeting-schedule/${item.id}` : `/meeting-schedule/${item.id}/small`}
+            className={styles.itemLink}
+          >
+            <ContentListItemCard
+              meta={`${dateFormatter.format(new Date(item.date))} ・ ${item.source}`}
+              title={item.title}
+              trailing={item.location}
+            />
+          </Link>
         ),
       }))}
       currentPage={currentPage}

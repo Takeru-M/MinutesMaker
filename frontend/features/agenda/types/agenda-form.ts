@@ -1,5 +1,6 @@
 export type AgendaFormData = {
   date: string;
+  meetingType: string;
   types: string[];
   title: string;
   responsible: string;
@@ -8,6 +9,8 @@ export type AgendaFormData = {
   body: string;
   pdfFile: File | null;
   votingItems: string;
+  relatedPastAgendaIds: number[];
+  relatedOtherAgendaIds: number[];
 };
 
 export type AgendaFieldName = keyof AgendaFormData | "types";

@@ -16,3 +16,9 @@ PyPDF2
 reportlab
 babel
 openai
+langchain
+langgraph
+langchain-openai
+langchain-qdrant
+qdrant-client
+tiktoken

@@ -3,5 +3,5 @@ export type ContentListItem = {
   date: string;
   source: string;
   title: string;
-  summary: string;
+  summary?: string;
 };

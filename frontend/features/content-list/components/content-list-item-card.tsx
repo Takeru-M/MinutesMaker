@@ -4,8 +4,8 @@ import styles from "./content-list-view.module.css";
 
 type ContentListItemCardProps = {
   meta: string;
-  title: string;
-  summary: string;
+  title: ReactNode;
+  summary?: string;
   trailing?: ReactNode;
 };
 
@@ -15,7 +15,7 @@ export function ContentListItemCard({ meta, title, summary, trailing }: ContentL
       <div className={styles.itemContent}>
         <p className={styles.itemMeta}>{meta}</p>
         <h4 className={styles.itemTitle}>{title}</h4>
-        <p className={styles.itemSummary}>{summary}</p>
+        {summary ? <p className={styles.itemSummary}>{summary}</p> : null}
       </div>
       {trailing ? <div className={styles.itemTrailing}>{trailing}</div> : null}
     </article>

@@ -258,6 +258,84 @@
   margin: 0;
 }
 
+.relatedSearchRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.relatedSearchButton {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0 14px;
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.relatedSearchButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.relatedList {
+  margin-top: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  min-height: 60px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.relatedListItem {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  text-align: left;
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.relatedListItem span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.selectedTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selectedTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  font-size: 12px;
+  border-radius: 9999px;
+  padding: 4px 10px;
+}
+
+.selectedTag button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #1e3a8a;
+  font-size: 14px;
+  line-height: 1;
+}
+
 .buttonGroup {
   display: flex;
   gap: 12px;

@@ -5,6 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/features/i18n";
 import { AgendaFormData } from "@/features/agenda/types/agenda-form";
 import { validateRequiredAgendaFields } from "@/features/agenda/validation/agenda-form-validation";
+import type { AgendaCreateRequest, AgendaPdfUploadResponse, AgendaSearchItemResponse, MeetingListItemResponse } from "@/lib/api-types";
+import { apiFetch } from "@/lib/api-client";
+import { formatDateToJapanese } from "@/lib/date-formatter";
 import type { RootState } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -22,14 +25,21 @@ const AGENDA_TYPES = [
   { id: "voting-planned", labelKey: "agendaForm.types.votingPlanned" },
 ];
 
-const MOCK_AGENDA_DATES = [
-  { value: "2026-04-06", label: "4月6日のブロック会議" },
-  { value: "2026-04-13", label: "4月13日のブロック会議" },
-  { value: "2026-04-20", label: "4月20日のブロック会議" },
-  { value: "2026-04-27", label: "4月27日のブロック会議" },
-];
+const MEETING_TYPES = [
+  { value: "block", labelKey: "agendaForm.meetingTypes.block" },
+] as const;
 
 const isVotingRelatedTypeSelected = (types: string[]) => types.includes("voting") || types.includes("voting-planned");
+
+type RelatedAgendaItem = {
+  id: number;
+  title: string;
+  meetingTitle: string;
+  meetingType: string;
+  meetingScheduledAt: string;
+};
+
+type RelatedScope = "past" | "other";
 
 export function AgendaSubmitForm() {
   const { t } = useI18n();
@@ -38,6 +48,7 @@ export function AgendaSubmitForm() {
 
   const initialFormData: AgendaFormData = {
     date: "",
+    meetingType: "",
     types: [],
     title: "",
     responsible: "",
@@ -46,11 +57,25 @@ export function AgendaSubmitForm() {
     body: "",
     pdfFile: null,
     votingItems: "",
+    relatedPastAgendaIds: [],
+    relatedOtherAgendaIds: [],
   };
 
   const [formData, setFormData] = useState<AgendaFormData>(initialFormData);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfTypeError, setPdfTypeError] = useState<string | null>(null);
+  const [isSubmittingToApi, setIsSubmittingToApi] = useState(false);
+  const [agendaDates, setAgendaDates] = useState<{ value: string; label: string }[]>([]);
+  const [isLoadingDates, setIsLoadingDates] = useState(true);
+
+  const [pastQuery, setPastQuery] = useState("");
+  const [otherQuery, setOtherQuery] = useState("");
+  const [pastResults, setPastResults] = useState<RelatedAgendaItem[]>([]);
+  const [otherResults, setOtherResults] = useState<RelatedAgendaItem[]>([]);
+  const [selectedPastItems, setSelectedPastItems] = useState<RelatedAgendaItem[]>([]);
+  const [selectedOtherItems, setSelectedOtherItems] = useState<RelatedAgendaItem[]>([]);
+  const [isPastLoading, setIsPastLoading] = useState(false);
+  const [isOtherLoading, setIsOtherLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfDialogRef = useRef<HTMLDialogElement>(null);
 
@@ -159,6 +184,12 @@ export function AgendaSubmitForm() {
     setFormData(initialFormData);
     setPdfPreviewUrl(null);
     setPdfTypeError(null);
+    setPastQuery("");
+    setOtherQuery("");
+    setPastResults([]);
+    setOtherResults([]);
+    setSelectedPastItems([]);
+    setSelectedOtherItems([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -168,7 +199,144 @@ export function AgendaSubmitForm() {
     dispatch(resetAgendaValidation());
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const searchRelatedAgendas = async (scope: RelatedScope) => {
+    const query = scope === "past" ? pastQuery : otherQuery;
+    const meetingType = scope === "past" ? "block" : "annual";
+    if (scope === "past") {
+      setIsPastLoading(true);
+    } else {
+      setIsOtherLoading(true);
+    }
+
+    try {
+      const params = new URLSearchParams();
+      params.set("query", query);
+      params.set("meeting_type", meetingType);
+      params.set("limit", "20");
+
+      const response = await apiFetch(`/api/v1/agendas/search?${params.toString()}`);
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as AgendaSearchItemResponse[];
+      const mapped: RelatedAgendaItem[] = data.map((item) => ({
+        id: item.id,
+        title: item.title,
+        meetingTitle: item.meeting_title,
+        meetingType: item.meeting_type,
+        meetingScheduledAt: item.meeting_scheduled_at,
+      }));
+      if (scope === "past") {
+        setPastResults(mapped);
+      } else {
+        setOtherResults(mapped);
+      }
+    } finally {
+      if (scope === "past") {
+        setIsPastLoading(false);
+      } else {
+        setIsOtherLoading(false);
+      }
+    }
+  };
+
+  const addRelatedAgenda = (scope: RelatedScope, agendaId: number) => {
+    const sourceResults = scope === "past" ? pastResults : otherResults;
+    const selectedAgenda = sourceResults.find((agenda) => agenda.id === agendaId);
+
+    setFormData((prev) => {
+      if (scope === "past") {
+        if (prev.relatedPastAgendaIds.includes(agendaId)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          relatedPastAgendaIds: [...prev.relatedPastAgendaIds, agendaId],
+        };
+      }
+
+      if (prev.relatedOtherAgendaIds.includes(agendaId)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        relatedOtherAgendaIds: [...prev.relatedOtherAgendaIds, agendaId],
+      };
+    });
+
+    if (!selectedAgenda) {
+      return;
+    }
+
+    if (scope === "past") {
+      setSelectedPastItems((prev) =>
+        prev.some((agenda) => agenda.id === selectedAgenda.id) ? prev : [...prev, selectedAgenda],
+      );
+      return;
+    }
+
+    setSelectedOtherItems((prev) =>
+      prev.some((agenda) => agenda.id === selectedAgenda.id) ? prev : [...prev, selectedAgenda],
+    );
+  };
+
+  const removeRelatedAgenda = (scope: RelatedScope, agendaId: number) => {
+    setFormData((prev) => {
+      if (scope === "past") {
+        setSelectedPastItems((prev) => prev.filter((agenda) => agenda.id !== agendaId));
+        return {
+          ...prev,
+          relatedPastAgendaIds: prev.relatedPastAgendaIds.filter((id) => id !== agendaId),
+        };
+      }
+      setSelectedOtherItems((prev) => prev.filter((agenda) => agenda.id !== agendaId));
+      return {
+        ...prev,
+        relatedOtherAgendaIds: prev.relatedOtherAgendaIds.filter((id) => id !== agendaId),
+      };
+    });
+  };
+
+  useEffect(() => {
+    const fetchBlockMeetings = async () => {
+      setIsLoadingDates(true);
+      try {
+        const response = await apiFetch("/api/v1/meetings?limit=500");
+        if (!response.ok) {
+          return;
+        }
+
+        const meetings = (await response.json()) as MeetingListItemResponse[];
+        // ブロック会議のみをフィルタリング
+        const blockMeetings = meetings.filter((m) => m.meeting_type === "block");
+        // 日付でソートし、重複を除去
+        const uniqueMeetings = new Map<string, MeetingListItemResponse>();
+        blockMeetings.forEach((m) => {
+          const dateKey = new Date(m.scheduled_at).toISOString().split("T")[0];
+          if (!uniqueMeetings.has(dateKey)) {
+            uniqueMeetings.set(dateKey, m);
+          }
+        });
+
+        const dates = Array.from(uniqueMeetings.values()).map((m) => ({
+          value: new Date(m.scheduled_at).toISOString().split("T")[0],
+          label: formatDateToJapanese(m.scheduled_at),
+        }));
+
+        setAgendaDates(dates);
+      } finally {
+        setIsLoadingDates(false);
+      }
+    };
+
+    fetchBlockMeetings();
+    searchRelatedAgendas("past");
+    searchRelatedAgendas("other");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     dispatch(validateAgendaForm(formData));
@@ -178,9 +346,69 @@ export function AgendaSubmitForm() {
       return;
     }
 
-    // ここでAPIに送信する処理を追加
-    console.log("Form submitted:", formData);
-    alert(t("agendaForm.submitted"));
+    setIsSubmittingToApi(true);
+    try {
+      let pdfS3Key: string | null = null;
+      let pdfUrl: string | null = null;
+
+      if (formData.pdfFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.set("file", formData.pdfFile);
+
+        const uploadResponse = await apiFetch("/api/v1/agendas/upload-pdf", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (!uploadResponse.ok) {
+          alert(t("agendaForm.errors.submitFailed"));
+          return;
+        }
+
+        const uploadData = (await uploadResponse.json()) as AgendaPdfUploadResponse;
+        pdfS3Key = uploadData.s3_key;
+        pdfUrl = uploadData.url;
+      }
+
+      const payload: AgendaCreateRequest = {
+        meeting_date: formData.date,
+        meeting_type: formData.meetingType as AgendaCreateRequest["meeting_type"],
+        title: formData.title,
+        responsible: formData.responsible.trim() || null,
+        description: null,
+        content: formData.body.trim() || null,
+        status: "draft",
+        priority: 3,
+        agenda_types: formData.types,
+        voting_items: formData.votingItems.trim() || null,
+        pdf_s3_key: pdfS3Key,
+        pdf_url: pdfUrl,
+        related_past_agenda_ids: formData.relatedPastAgendaIds,
+        related_other_agenda_ids: formData.relatedOtherAgendaIds,
+      };
+
+      const response = await apiFetch("/api/v1/agendas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        alert(t("agendaForm.errors.submitFailed"));
+        return;
+      }
+
+      alert(t("agendaForm.submitted"));
+      handleReset();
+      searchRelatedAgendas("past");
+      searchRelatedAgendas("other");
+    } catch {
+      alert(t("agendaForm.errors.submitFailed"));
+    } finally {
+      setIsSubmittingToApi(false);
+    }
   };
 
   return (
@@ -188,6 +416,29 @@ export function AgendaSubmitForm() {
       <div className={styles.formWrapper}>
         <form onSubmit={handleSubmit} onReset={handleReset} className={styles.form}>
           {/* 日程 */}
+          <div className={styles.formGroup}>
+            <label htmlFor="meetingType" className={styles.label}>
+              {t("agendaForm.labels.meetingType")} <span className={styles.required}>*</span>
+            </label>
+            <select
+              id="meetingType"
+              name="meetingType"
+              value={formData.meetingType}
+              onChange={handleInputChange}
+              className={`${styles.input} ${errors.meetingType ? styles.inputError : ""}`}
+            >
+              <option value="" disabled>
+                {t("agendaForm.placeholders.meetingType")}
+              </option>
+              {MEETING_TYPES.map((meetingType) => (
+                <option key={meetingType.value} value={meetingType.value}>
+                  {t(meetingType.labelKey)}
+                </option>
+              ))}
+            </select>
+            {errors.meetingType && <p className={styles.errorText}>{t(errors.meetingType)}</p>}
+          </div>
+
           <div className={styles.formGroup}>
             <label htmlFor="date" className={styles.label}>
               {t("agendaForm.labels.date")} <span className={styles.required}>*</span>
@@ -198,17 +449,18 @@ export function AgendaSubmitForm() {
               value={formData.date}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.date ? styles.inputError : ""}`}
+              disabled={isLoadingDates}
             >
               <option value="" disabled>
-                {t("agendaForm.placeholders.date")}
+                {isLoadingDates ? t("common.loading") : t("agendaForm.placeholders.date")}
               </option>
-              {MOCK_AGENDA_DATES.map((agendaDate) => (
+              {agendaDates.map((agendaDate) => (
                 <option key={agendaDate.value} value={agendaDate.value}>
                   {agendaDate.label}
                 </option>
               ))}
             </select>
-            <p className={styles.helperText}>{t("agendaForm.hints.dateMock")}</p>
+            <p className={styles.helperText}>{t("agendaForm.hints.meetingDateType")}</p>
             {errors.date && <p className={styles.errorText}>{t(errors.date)}</p>}
           </div>
 
@@ -375,23 +627,105 @@ export function AgendaSubmitForm() {
           {/* 過去のブロック会議の議案 */}
           <div className={styles.formGroup}>
             <label className={styles.label}>{t("agendaForm.labels.relatedPast")}</label>
-            <div className={styles.placeholderBox}>
-              <p className={styles.placeholderText}>{t("agendaForm.placeholders.relatedPast")}</p>
+            <div className={styles.relatedSearchRow}>
+              <input
+                type="text"
+                value={pastQuery}
+                onChange={(event) => setPastQuery(event.target.value)}
+                className={styles.input}
+                placeholder={t("agendaForm.placeholders.relatedSearch")}
+              />
+              <button
+                type="button"
+                className={styles.relatedSearchButton}
+                onClick={() => searchRelatedAgendas("past")}
+                disabled={isPastLoading}
+              >
+                {isPastLoading ? t("agendaForm.buttons.searching") : t("agendaForm.buttons.searchRelated")}
+              </button>
+            </div>
+            <div className={styles.relatedList}>
+              {pastResults.length === 0 ? (
+                <p className={styles.placeholderText}>{t("agendaForm.placeholders.relatedPast")}</p>
+              ) : (
+                pastResults.map((agenda) => (
+                  <button
+                    type="button"
+                    key={`past-${agenda.id}`}
+                    className={styles.relatedListItem}
+                    onClick={() => addRelatedAgenda("past", agenda.id)}
+                  >
+                    <strong>{agenda.title}</strong>
+                    <span>{agenda.meetingTitle}</span>
+                  </button>
+                ))
+              )}
+            </div>
+            <div className={styles.selectedTags}>
+              {selectedPastItems.map((agenda) => (
+                <span key={`past-selected-${agenda.id}`} className={styles.selectedTag}>
+                  {agenda.title}
+                  <button type="button" onClick={() => removeRelatedAgenda("past", agenda.id)}>
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
 
           {/* その他の関連議案 */}
           <div className={styles.formGroup}>
             <label className={styles.label}>{t("agendaForm.labels.relatedOther")}</label>
-            <div className={styles.placeholderBox}>
-              <p className={styles.placeholderText}>{t("agendaForm.placeholders.relatedOther")}</p>
+            <div className={styles.relatedSearchRow}>
+              <input
+                type="text"
+                value={otherQuery}
+                onChange={(event) => setOtherQuery(event.target.value)}
+                className={styles.input}
+                placeholder={t("agendaForm.placeholders.relatedSearch")}
+              />
+              <button
+                type="button"
+                className={styles.relatedSearchButton}
+                onClick={() => searchRelatedAgendas("other")}
+                disabled={isOtherLoading}
+              >
+                {isOtherLoading ? t("agendaForm.buttons.searching") : t("agendaForm.buttons.searchRelated")}
+              </button>
+            </div>
+            <div className={styles.relatedList}>
+              {otherResults.length === 0 ? (
+                <p className={styles.placeholderText}>{t("agendaForm.placeholders.relatedOther")}</p>
+              ) : (
+                otherResults.map((agenda) => (
+                  <button
+                    type="button"
+                    key={`other-${agenda.id}`}
+                    className={styles.relatedListItem}
+                    onClick={() => addRelatedAgenda("other", agenda.id)}
+                  >
+                    <strong>{agenda.title}</strong>
+                    <span>{agenda.meetingTitle}</span>
+                  </button>
+                ))
+              )}
+            </div>
+            <div className={styles.selectedTags}>
+              {selectedOtherItems.map((agenda) => (
+                <span key={`other-selected-${agenda.id}`} className={styles.selectedTag}>
+                  {agenda.title}
+                  <button type="button" onClick={() => removeRelatedAgenda("other", agenda.id)}>
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
 
           {/* ボタン */}
           <div className={styles.buttonGroup}>
             <button type="submit" className={styles.submitButton}>
-              {t("agendaForm.buttons.submit")}
+              {isSubmittingToApi ? t("agendaForm.buttons.submitting") : t("agendaForm.buttons.submit")}
             </button>
             <button type="reset" className={styles.resetButton}>
               {t("agendaForm.buttons.reset")}

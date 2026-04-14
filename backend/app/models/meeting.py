@@ -17,6 +17,13 @@ class Meeting(SQLModel, table=True):
             "minutes_scope_policy IN ('agenda', 'meeting')",
             name="ck_meetings_minutes_scope_policy",
         ),
+        CheckConstraint(
+            "(meeting_scale = 'large' AND minutes_scope_policy = 'agenda' "
+            "AND meeting_type IN ('dormitory_general_assembly', 'block', 'annual')) OR "
+            "(meeting_scale = 'small' AND minutes_scope_policy = 'meeting' "
+            "AND meeting_type IN ('department', 'committee', 'bureau'))",
+            name="ck_meetings_scale_type_policy_consistency",
+        ),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)

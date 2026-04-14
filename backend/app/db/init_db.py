@@ -117,7 +117,7 @@ def _ensure_schema_compatibility() -> None:
                 conn.execute(
                     text(
                         "ALTER TABLE meetings "
-                        "ADD COLUMN meeting_type VARCHAR(50) NOT NULL DEFAULT 'large'"
+                        "ADD COLUMN meeting_type VARCHAR(50) NOT NULL DEFAULT 'dormitory_general_assembly'"
                     )
                 )
 
@@ -130,7 +130,7 @@ def _ensure_schema_compatibility() -> None:
                 conn.execute(
                     text(
                         "ALTER TABLE agendas "
-                        "ADD COLUMN meeting_type VARCHAR(50) NOT NULL DEFAULT 'large'"
+                        "ADD COLUMN meeting_type VARCHAR(50) NOT NULL DEFAULT 'dormitory_general_assembly'"
                     )
                 )
             if "responsible" not in agenda_columns:

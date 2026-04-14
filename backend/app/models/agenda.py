@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import JSON, CheckConstraint, Column, Text, UniqueConstraint
+from sqlalchemy import JSON, CheckConstraint, Column, ForeignKeyConstraint, Text, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -10,8 +10,16 @@ class Agenda(SQLModel, table=True):
     __table_args__ = (
         CheckConstraint("status IN ('draft', 'published', 'archived')", name="ck_agendas_status"),
         CheckConstraint("priority BETWEEN 1 AND 5", name="ck_agendas_priority"),
-        CheckConstraint("meeting_type IN ('large', 'block', 'annual')", name="ck_agendas_meeting_type"),
+        CheckConstraint(
+            "meeting_type IN ('dormitory_general_assembly', 'block', 'annual')",
+            name="ck_agendas_meeting_type",
+        ),
         UniqueConstraint("meeting_id", "order_no", name="uq_agendas_meeting_order"),
+        ForeignKeyConstraint(
+            ["meeting_id", "meeting_type"],
+            ["meetings.id", "meetings.meeting_type"],
+            name="fk_agendas_meeting_id_meeting_type",
+        ),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)

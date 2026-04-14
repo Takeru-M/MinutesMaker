@@ -1,12 +1,17 @@
 from datetime import date, datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.core.constants import (
+    MEETING_TYPE_BLOCK,
+    MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY,
+)
 
 
 class AgendaCreateRequest(BaseModel):
     meeting_date: date
-    meeting_type: Literal["large", "block", "annual"]
+    meeting_type: Literal["dormitory_general_assembly", "block", "annual", "large"]
     title: str = Field(min_length=1)
     responsible: Optional[str] = None
     description: Optional[str] = None
@@ -19,6 +24,16 @@ class AgendaCreateRequest(BaseModel):
     pdf_url: Optional[str] = None
     related_past_agenda_ids: list[int] = Field(default_factory=list)
     related_other_agenda_ids: list[int] = Field(default_factory=list)
+
+    @field_validator("meeting_type", mode="before")
+    @classmethod
+    def normalize_meeting_type(cls, v: str) -> str:
+        normalized = (v or "").strip().lower()
+        if normalized == "large":
+            return MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY
+        if normalized in {MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY, MEETING_TYPE_BLOCK, "annual"}:
+            return normalized
+        return v
 
 
 class AgendaReadResponse(BaseModel):

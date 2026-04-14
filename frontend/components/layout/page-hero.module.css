@@ -1,0 +1,33 @@
+.hero {
+  border: 1px solid #dbe2ea;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  padding: 20px;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e3a8a;
+  background: #dbeafe;
+}
+
+.title {
+  margin: 10px 0 0;
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
+  color: #0f172a;
+}
+
+.description {
+  margin: 10px 0 0;
+  color: #334155;
+  line-height: 1.7;
+}
+
+.extra {
+  margin-top: 8px;
+}

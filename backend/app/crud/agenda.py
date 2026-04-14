@@ -64,8 +64,8 @@ def create_agenda(db: Session, *, payload: AgendaCreateRequest, user_id: int) ->
 
     agenda = Agenda(
         meeting_id=meeting.id,
-        meeting_date=payload.meeting_date,
-        meeting_type=payload.meeting_type,
+        meeting_date=meeting.scheduled_at.date(),
+        meeting_type=meeting.meeting_type,
         title=payload.title,
         responsible=payload.responsible or payload.description,
         description=payload.description,

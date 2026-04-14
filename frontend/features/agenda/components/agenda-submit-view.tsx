@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { Container } from "@/components/ui/container";
-import { Header, Footer } from "@/components/layout";
+import { Header, Footer, PageHero } from "@/components/layout";
 import { useI18n } from "@/features/i18n";
 import { AgendaSubmitForm } from "@/features/agenda/components/agenda-submit-form";
 import { useAppSelector } from "@/store/hooks";
@@ -49,11 +49,11 @@ export function AgendaSubmitView() {
             <span className={styles.breadcrumbCurrent}>{t("agendaSubmitView.current")}</span>
           </div>
 
-          <section className={styles.hero}>
-            <p className={styles.badge}>{t("agendaSubmitView.badge")}</p>
-            <h2 className={styles.title}>{t("agendaSubmitView.title")}</h2>
-            <p className={styles.description}>{t("agendaSubmitView.description")}</p>
-          </section>
+          <PageHero
+            badge={t("agendaSubmitView.badge")}
+            title={t("agendaSubmitView.title")}
+            description={t("agendaSubmitView.description")}
+          />
 
           <AgendaSubmitForm />
         </main>

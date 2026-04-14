@@ -35,6 +35,9 @@ export const enMessages: TranslationNode = {
     latestMeetingEmpty: "No latest meeting",
     latestMeetingActionTitle: "Open meeting detail",
     latestMeetingActionDescription: "Go to the latest meeting detail page",
+    adminFeaturesActionTitle: "Open admin features",
+    adminFeaturesActionDescription: "Go to the administrator feature list",
+    adminFeaturesLoginLink: "Sign in to use administrator features",
     agendaViewTitle: "Agenda Browsing",
     viewAll: "View all",
     latestAgendaTitle: "Latest Agendas",
@@ -55,6 +58,183 @@ export const enMessages: TranslationNode = {
       s4: "mics - Interview/New Resident Management",
       s5: "inspection - Inspection Committee Work",
       s6: "it-section - Information Committee Work",
+    },
+  },
+  adminFeatureList: {
+    badge: "ADMIN FEATURES",
+    title: "Administrator Feature List",
+    description: "Category list of administrator features. Each area will be implemented in phases.",
+    restrictedNotice: "This page is available only for administrator roles.",
+    backToHome: "Back to Home",
+    openPage: "Open page",
+    comingSoon: "Coming soon",
+    items: {
+      accountPermission: {
+        title: "Account / Permissions",
+        description: "Manage users, role assignment/revocation, and permission design.",
+      },
+      meetingOperations: {
+        title: "Meeting Operations",
+        description: "Manage meeting, agenda, and minutes operations including approval and publishing.",
+      },
+      notice: {
+        title: "Notices",
+        description: "Manage notice creation, publishing, and category operations.",
+      },
+      repository: {
+        title: "Documents",
+        description: "Manage repository contents and attached files.",
+      },
+      guide: {
+        title: "Guide",
+        description: "Manage guide content creation, updates, and publishing.",
+      },
+      audit: {
+        title: "Audit",
+        description: "Review and analyze audit logs and operation histories.",
+      },
+      aiOperations: {
+        title: "AI Operations",
+        description: "Manage AI-related features such as knowledge sync, chunks, and QA logs.",
+      },
+    },
+  },
+  adminFeatureCommon: {
+    featureList: "Administrator Feature List",
+    restrictedNotice: "This page is available only for administrator roles.",
+    operationExamples: "Main operations",
+  },
+  adminNoticePage: {
+    badge: "ADMIN NOTICE",
+    title: "Notice Management",
+    description: "Provides operational management functions for notices.",
+    items: {
+      createPublish: {
+        title: "Create and publish notices",
+        description: "Manage workflow from drafting to publishing notices.",
+      },
+      categoryManage: {
+        title: "Category operations",
+        description: "Maintain categorization rules such as Important, Info, and Warning.",
+      },
+      pinnedManage: {
+        title: "Pinned display management",
+        description: "Manage priority display settings for pinned notices.",
+      },
+    },
+  },
+  adminRepositoryPage: {
+    badge: "ADMIN REPOSITORY",
+    title: "Document Management",
+    description: "Manage repository contents and attachments.",
+    items: {
+      contentManage: {
+        title: "Document content management",
+        description: "Create, edit, and delete document bodies.",
+      },
+      attachmentManage: {
+        title: "Attachment management",
+        description: "Manage adding, replacing, and deleting attached files.",
+      },
+      publishManage: {
+        title: "Publish state management",
+        description: "Manage transitions among draft, published, and archived states.",
+      },
+    },
+  },
+  adminGuidePage: {
+    badge: "ADMIN GUIDE",
+    title: "Guide Management",
+    description: "Manage guide content maintenance and publishing operations.",
+    items: {
+      contentManage: {
+        title: "Guide content management",
+        description: "Create, edit, and delete guide articles.",
+      },
+      versionManage: {
+        title: "Revision history management",
+        description: "Manage change history and keep updates easy to follow.",
+      },
+      publishManage: {
+        title: "Publishing operations",
+        description: "Manage publish states and visibility timing.",
+      },
+    },
+  },
+  adminAccountPermissionPage: {
+    badge: "ADMIN ACCOUNT / PERMISSION",
+    title: "Account and Permission Management",
+    description: "Manage user accounts and role permissions.",
+    items: {
+      userManage: {
+        title: "User management",
+        description: "Add users, update profiles, and review affiliations.",
+      },
+      roleAssign: {
+        title: "Role assignment management",
+        description: "Assign/revoke roles and review permissions.",
+      },
+      accountStatus: {
+        title: "Account status management",
+        description: "Manage usage states such as activation and deactivation.",
+      },
+    },
+  },
+  adminMeetingOperationsPage: {
+    badge: "ADMIN MEETING OPERATIONS",
+    title: "Meeting Operations Management",
+    description: "Manage operations for meetings, agendas, and minutes.",
+    items: {
+      meetingManage: {
+        title: "Meeting information management",
+        description: "Manage schedules, types, and participant operation settings.",
+      },
+      agendaManage: {
+        title: "Agenda management",
+        description: "Manage agenda structure, ordering, and relations.",
+      },
+      minutesWorkflow: {
+        title: "Minutes workflow management",
+        description: "Manage minute workflow from drafting to approval and publishing.",
+      },
+    },
+  },
+  adminAuditPage: {
+    badge: "ADMIN AUDIT",
+    title: "Audit Operations",
+    description: "Review and analyze audit logs and operation history.",
+    items: {
+      auditLogView: {
+        title: "Audit log viewing",
+        description: "Search operation logs and review change details.",
+      },
+      changeHistory: {
+        title: "Change history review",
+        description: "Review entity-level change history in chronological order.",
+      },
+      incidentReview: {
+        title: "Incident review",
+        description: "Investigate anomalous actions and failure logs.",
+      },
+    },
+  },
+  adminAiOperationsPage: {
+    badge: "ADMIN AI OPERATIONS",
+    title: "AI Operations Management",
+    description: "Manage meeting knowledge and QA operations.",
+    items: {
+      knowledgeSync: {
+        title: "Knowledge sync management",
+        description: "Manage ingestion and synchronization status of meeting-related data.",
+      },
+      chunkQuality: {
+        title: "Chunk quality management",
+        description: "Review generated chunk quality and metadata.",
+      },
+      qaLogReview: {
+        title: "QA log review",
+        description: "Review question history and answer quality.",
+      },
     },
   },
   meetingScheduleView: {

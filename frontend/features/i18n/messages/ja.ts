@@ -35,6 +35,9 @@ export const jaMessages: TranslationNode = {
     latestMeetingEmpty: "最新の会議はありません",
     latestMeetingActionTitle: "会議詳細を開く",
     latestMeetingActionDescription: "最新の会議の詳細ページへ移動",
+    adminFeaturesActionTitle: "管理者機能一覧へ",
+    adminFeaturesActionDescription: "管理者向け機能の一覧ページを開く",
+    adminFeaturesLoginLink: "管理者機能を利用するにはログインしてください",
     agendaViewTitle: "議案の閲覧",
     viewAll: "すべて見る",
     latestAgendaTitle: "新着議案一覧",
@@ -55,6 +58,183 @@ export const jaMessages: TranslationNode = {
       s4: "mics 入寮面接/新入寮生の管理はこちらから",
       s5: "inspection 監察委員会の業務はこちらから",
       s6: "it-section 情報委員会の業務はこちらから",
+    },
+  },
+  adminFeatureList: {
+    badge: "ADMIN FEATURES",
+    title: "管理者機能一覧",
+    description: "管理者向けの機能カテゴリ一覧です。機能ごとに順次実装します。",
+    restrictedNotice: "このページは管理者ロールのみ利用できます。",
+    backToHome: "ホームに戻る",
+    openPage: "ページを開く",
+    comingSoon: "順次実装予定",
+    items: {
+      accountPermission: {
+        title: "アカウント / 権限",
+        description: "ユーザー管理、ロール付与・剥奪、権限設計を管理します。",
+      },
+      meetingOperations: {
+        title: "会議運用",
+        description: "会議・議案・議事録の運用設定、承認、公開フローを管理します。",
+      },
+      notice: {
+        title: "お知らせ",
+        description: "お知らせの作成、公開、カテゴリ運用を管理します。",
+      },
+      repository: {
+        title: "資料",
+        description: "資料置き場のコンテンツと添付ファイルを管理します。",
+      },
+      guide: {
+        title: "利用方法",
+        description: "利用方法コンテンツの作成・更新・公開を管理します。",
+      },
+      audit: {
+        title: "監査",
+        description: "監査ログと操作履歴の確認・分析を行います。",
+      },
+      aiOperations: {
+        title: "AI運用",
+        description: "会議ナレッジ同期、チャンク、QAログなどAI関連機能を管理します。",
+      },
+    },
+  },
+  adminFeatureCommon: {
+    featureList: "管理者機能一覧",
+    restrictedNotice: "このページは管理者ロールのみ利用できます。",
+    operationExamples: "主な操作",
+  },
+  adminNoticePage: {
+    badge: "ADMIN NOTICE",
+    title: "お知らせ管理",
+    description: "お知らせの運用管理に関する機能を提供します。",
+    items: {
+      createPublish: {
+        title: "お知らせ作成・公開",
+        description: "下書き作成から公開までの運用フローを管理します。",
+      },
+      categoryManage: {
+        title: "カテゴリ運用",
+        description: "重要・一般・注意などの分類ルールを維持します。",
+      },
+      pinnedManage: {
+        title: "固定表示管理",
+        description: "トップ表示するお知らせの優先表示設定を管理します。",
+      },
+    },
+  },
+  adminRepositoryPage: {
+    badge: "ADMIN REPOSITORY",
+    title: "資料管理",
+    description: "資料置き場のコンテンツと添付ファイルを管理します。",
+    items: {
+      contentManage: {
+        title: "資料コンテンツ管理",
+        description: "資料本文の作成・編集・削除を行います。",
+      },
+      attachmentManage: {
+        title: "添付ファイル管理",
+        description: "添付ファイルの追加・差し替え・削除を管理します。",
+      },
+      publishManage: {
+        title: "公開状態管理",
+        description: "下書き・公開・アーカイブ状態の遷移を管理します。",
+      },
+    },
+  },
+  adminGuidePage: {
+    badge: "ADMIN GUIDE",
+    title: "利用方法管理",
+    description: "利用方法コンテンツの整備と公開運用を管理します。",
+    items: {
+      contentManage: {
+        title: "ガイド本文管理",
+        description: "案内記事の作成・編集・削除を行います。",
+      },
+      versionManage: {
+        title: "更新履歴管理",
+        description: "変更内容を管理し、更新履歴を分かりやすく維持します。",
+      },
+      publishManage: {
+        title: "公開運用管理",
+        description: "公開状態・表示タイミングを管理します。",
+      },
+    },
+  },
+  adminAccountPermissionPage: {
+    badge: "ADMIN ACCOUNT / PERMISSION",
+    title: "アカウント / 権限管理",
+    description: "ユーザーアカウントとロール権限の運用管理を行います。",
+    items: {
+      userManage: {
+        title: "ユーザー管理",
+        description: "ユーザーの追加・情報更新・所属確認を行います。",
+      },
+      roleAssign: {
+        title: "ロール割り当て管理",
+        description: "ロールの付与・剥奪と権限の見直しを行います。",
+      },
+      accountStatus: {
+        title: "アカウント状態管理",
+        description: "有効化・無効化などの利用状態を管理します。",
+      },
+    },
+  },
+  adminMeetingOperationsPage: {
+    badge: "ADMIN MEETING OPERATIONS",
+    title: "会議運用管理",
+    description: "会議、議案、議事録の運用管理を行います。",
+    items: {
+      meetingManage: {
+        title: "会議情報管理",
+        description: "会議日程、種別、参加情報などの運用設定を管理します。",
+      },
+      agendaManage: {
+        title: "議案管理",
+        description: "議案の構成、並び順、関連付けを管理します。",
+      },
+      minutesWorkflow: {
+        title: "議事録ワークフロー管理",
+        description: "作成、承認、公開までの議事録フローを管理します。",
+      },
+    },
+  },
+  adminAuditPage: {
+    badge: "ADMIN AUDIT",
+    title: "監査運用",
+    description: "監査ログと操作履歴の確認・分析を行います。",
+    items: {
+      auditLogView: {
+        title: "監査ログ閲覧",
+        description: "操作ログを検索し、変更内容を確認します。",
+      },
+      changeHistory: {
+        title: "変更履歴確認",
+        description: "対象データの変更履歴を時系列で確認します。",
+      },
+      incidentReview: {
+        title: "インシデント確認",
+        description: "異常操作や失敗ログの調査を行います。",
+      },
+    },
+  },
+  adminAiOperationsPage: {
+    badge: "ADMIN AI OPERATIONS",
+    title: "AI運用管理",
+    description: "会議ナレッジとQA運用の管理を行います。",
+    items: {
+      knowledgeSync: {
+        title: "ナレッジ同期管理",
+        description: "会議関連データの取り込み・同期状態を管理します。",
+      },
+      chunkQuality: {
+        title: "チャンク品質管理",
+        description: "生成チャンクの品質やメタ情報を確認します。",
+      },
+      qaLogReview: {
+        title: "QAログ確認",
+        description: "問い合わせ履歴と回答品質を確認します。",
+      },
     },
   },
   meetingScheduleView: {

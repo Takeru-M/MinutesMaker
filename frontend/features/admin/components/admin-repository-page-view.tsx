@@ -1,32 +1,50 @@
 "use client";
 
 import { useI18n } from "@/features/i18n";
-import { AdminFeaturePageShell } from "./admin-feature-page-shell";
+import { AdminContentManagementPageView } from "./admin-content-management-page-view";
 
 export function AdminRepositoryPageView() {
   const { t } = useI18n();
 
   return (
-    <AdminFeaturePageShell
+    <AdminContentManagementPageView
       redirectPath="/admin/features/repository"
       badge={t("adminRepositoryPage.badge")}
       title={t("adminRepositoryPage.title")}
       description={t("adminRepositoryPage.description")}
-      sectionTitle={t("adminFeatureCommon.operationExamples")}
-      items={[
-        {
-          title: t("adminRepositoryPage.items.contentManage.title"),
-          description: t("adminRepositoryPage.items.contentManage.description"),
-        },
-        {
-          title: t("adminRepositoryPage.items.attachmentManage.title"),
-          description: t("adminRepositoryPage.items.attachmentManage.description"),
-        },
-        {
-          title: t("adminRepositoryPage.items.publishManage.title"),
-          description: t("adminRepositoryPage.items.publishManage.description"),
-        },
-      ]}
+      contentType="repository"
+      searchTitle={t("adminContentManagementCommon.searchTitle")}
+      searchDescription={t("adminContentManagementCommon.searchDescription")}
+      searchPlaceholder={t("adminContentManagementCommon.searchPlaceholder")}
+      listTitle={t("adminContentManagementCommon.listTitle")}
+      listDescription={t("adminContentManagementCommon.listDescription")}
+      formTitle={t("adminRepositoryPage.items.contentManage.title")}
+      formDescription={t("adminRepositoryPage.items.contentManage.description")}
+      totalLabel={t("adminContentManagementCommon.totalLabel")}
+      publishedLabel={t("adminContentManagementCommon.publishedLabel")}
+      loadingLabel={t("adminContentManagementCommon.loading")}
+      fetchFailedLabel={t("adminContentManagementCommon.fetchFailed")}
+      noResultsLabel={t("adminContentManagementCommon.noResults")}
+      newButtonLabel={t("adminContentManagementCommon.newButton")}
+      editButtonLabel={t("adminContentManagementCommon.editButton")}
+      deleteButtonLabel={t("adminContentManagementCommon.deleteButton")}
+      saveButtonCreateLabel={t("adminContentManagementCommon.saveButtonCreate")}
+      saveButtonUpdateLabel={t("adminContentManagementCommon.saveButtonUpdate")}
+      clearButtonLabel={t("adminContentManagementCommon.clearButton")}
+      createSuccessLabel={t("adminContentManagementCommon.createSuccess")}
+      updateSuccessLabel={t("adminContentManagementCommon.updateSuccess")}
+      deleteSuccessLabel={t("adminContentManagementCommon.deleteSuccess")}
+      deleteConfirmLabel={t("adminContentManagementCommon.deleteConfirm")}
+      authorLabel={t("adminContentManagementCommon.authorLabel")}
+      updatedAtLabel={t("adminContentManagementCommon.updatedAtLabel")}
+      statusLabel={t("adminContentManagementCommon.statusLabel")}
+      titleFieldLabel={t("adminContentManagementCommon.titleField")}
+      statusFieldLabel={t("adminContentManagementCommon.statusField")}
+      contentFieldLabel={t("adminContentManagementCommon.contentField")}
+      contentHelpLabel={t("adminContentManagementCommon.contentHelp")}
+      detailLabel={t("adminContentManagementCommon.detailLabel")}
+      noSelectionLabel={t("adminContentManagementCommon.noSelection")}
+      selectedAttachmentsLabel={t("adminContentManagementCommon.selectedAttachments")}
     />
   );
 }

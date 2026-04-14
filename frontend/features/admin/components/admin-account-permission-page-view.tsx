@@ -17,14 +17,12 @@ export function AdminAccountPermissionPageView() {
         {
           title: t("adminAccountPermissionPage.items.userManage.title"),
           description: t("adminAccountPermissionPage.items.userManage.description"),
+          href: "/admin/features/account-permission/user-management",
         },
         {
           title: t("adminAccountPermissionPage.items.roleAssign.title"),
           description: t("adminAccountPermissionPage.items.roleAssign.description"),
-        },
-        {
-          title: t("adminAccountPermissionPage.items.accountStatus.title"),
-          description: t("adminAccountPermissionPage.items.accountStatus.description"),
+          href: "/admin/features/account-permission/role-assignment",
         },
       ]}
     />

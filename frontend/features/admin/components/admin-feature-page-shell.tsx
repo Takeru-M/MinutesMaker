@@ -13,6 +13,8 @@ import styles from "./admin-feature-page-shell.module.css";
 type AdminFeaturePageItem = {
   title: string;
   description: string;
+  href?: string;
+  onClick?: () => void;
 };
 
 type AdminFeaturePageShellProps = {
@@ -72,12 +74,33 @@ export function AdminFeaturePageShell({
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>{sectionTitle}</h2>
             <div className={styles.grid}>
-              {items.map((item) => (
-                <article key={item.title} className={styles.card}>
-                  <h3 className={styles.cardTitle}>{item.title}</h3>
-                  <p className={styles.cardDescription}>{item.description}</p>
-                </article>
-              ))}
+              {items.map((item) => {
+                const card = (
+                  <article className={`${styles.card} ${item.href || item.onClick ? styles.cardClickable : ""}`}>
+                    <h3 className={styles.cardTitle}>{item.title}</h3>
+                    <p className={styles.cardDescription}>{item.description}</p>
+                  </article>
+                );
+
+                if (item.href) {
+                  return (
+                    <Link key={item.title} href={item.href} className={styles.cardLinkWrapper}>
+                      {card}
+                    </Link>
+                  );
+                }
+
+                if (item.onClick) {
+                  return (
+                    <button key={item.title} type="button" className={styles.cardButtonWrapper} onClick={item.onClick}>
+                      <span className={styles.cardTitle}>{item.title}</span>
+                      <span className={styles.cardDescription}>{item.description}</span>
+                    </button>
+                  );
+                }
+
+                return <div key={item.title}>{card}</div>;
+              })}
             </div>
           </section>
         </main>

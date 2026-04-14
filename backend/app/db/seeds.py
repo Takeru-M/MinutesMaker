@@ -166,7 +166,6 @@ def seed_sample_agendas(db: Session) -> None:
             "scheduled_at": datetime(2026, 4, 20, 18, 0, 0),
             "meeting_type": MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY,
             "meeting_scale": MEETING_SCALE_LARGE,
-            "participant_count_planned": 160,
         },
         {
             "key": "block_20260413",
@@ -175,7 +174,6 @@ def seed_sample_agendas(db: Session) -> None:
             "scheduled_at": datetime(2026, 4, 13, 18, 0, 0),
             "meeting_type": MEETING_TYPE_BLOCK,
             "meeting_scale": MEETING_SCALE_LARGE,
-            "participant_count_planned": 80,
         },
         {
             "key": "annual_20260331",
@@ -184,7 +182,6 @@ def seed_sample_agendas(db: Session) -> None:
             "scheduled_at": datetime(2026, 3, 31, 18, 0, 0),
             "meeting_type": MEETING_TYPE_ANNUAL,
             "meeting_scale": MEETING_SCALE_LARGE,
-            "participant_count_planned": 120,
         },
     ]
 
@@ -205,8 +202,6 @@ def seed_sample_agendas(db: Session) -> None:
                 meeting_type=spec["meeting_type"],
                 meeting_scale=spec["meeting_scale"],
                 minutes_scope_policy="agenda",
-                participant_count_planned=spec["participant_count_planned"],
-                participant_count_actual=0,
                 created_by=admin.id,
             )
             db.add(meeting)
@@ -220,7 +215,6 @@ def seed_sample_agendas(db: Session) -> None:
             meeting.meeting_type = spec["meeting_type"]
             meeting.meeting_scale = spec["meeting_scale"]
             meeting.minutes_scope_policy = "agenda"
-            meeting.participant_count_planned = spec["participant_count_planned"]
         meetings[spec["key"]] = meeting
 
     agenda_specs = [

@@ -27,7 +27,23 @@
   border: 1px solid #dbe2ea;
   border-radius: 12px;
   background: #ffffff;
+  padding: 0;
+  overflow: hidden;
+}
+
+.cardLinkWrapper {
+  display: block;
+  text-decoration: none;
+  color: inherit;
   padding: 14px;
+  min-height: 100%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.cardLinkWrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
 }
 
 .cardTitle {
@@ -43,23 +59,9 @@
 }
 
 .cardMeta {
-  margin: 10px 0 0;
+  margin: 10px 14px 14px;
   font-size: 0.82rem;
   color: #0369a1;
-}
-
-.cardActionLink {
-  margin-top: 10px;
-  display: inline-block;
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: #2563eb;
-  text-decoration: none;
-}
-
-.cardActionLink:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
 }
 
 @media (max-width: 900px) {

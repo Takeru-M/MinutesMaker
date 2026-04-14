@@ -73,6 +73,7 @@ export type AgendaDetailResponse = {
   responsible: string | null;
   description: string | null;
   content: string | null;
+  status: string;
   priority: number;
   agenda_types: string[];
   voting_items: string | null;
@@ -86,6 +87,8 @@ export type AgendaDetailResponse = {
   updated_at: string;
   published_at: string | null;
   deleted_at: string | null;
+  related_past_agenda_ids: number[];
+  related_other_agenda_ids: number[];
 };
 
 export type AgendaPdfUploadResponse = {
@@ -120,10 +123,8 @@ export type MeetingDetailResponse = {
   scheduled_at: string;
   location: string | null;
   status: string;
-  meeting_type: AgendaMeetingType;
-  meeting_scale: "large" | "medium" | "small";
-  participant_count_planned: number | null;
-  participant_count_actual: number | null;
+  meeting_type: "dormitory_general_assembly" | "block" | "department" | "committee" | "bureau" | "annual";
+  meeting_scale: "large" | "small";
   agendas: MeetingAgendaItemResponse[];
 };
 
@@ -144,6 +145,36 @@ export type NoticeDetailResponse = {
   created_by_name: string;
   published_at: string | null;
 };
+
+export type NoticeStatus = "draft" | "published" | "archived";
+
+export type NoticeAdminListItemResponse = {
+  id: number;
+  title: string;
+  content: string;
+  category: "important" | "info" | "warning";
+  status: NoticeStatus;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+};
+
+export type NoticeAdminDetailResponse = NoticeAdminListItemResponse & {
+  created_by_name: string;
+  updated_by_name: string | null;
+};
+
+export type NoticeCreateRequest = {
+  title: string;
+  content: string;
+  category: "important" | "info" | "warning";
+  status: NoticeStatus;
+  is_pinned: boolean;
+  published_at: string | null;
+};
+
+export type NoticeUpdateRequest = NoticeCreateRequest;
 
 export type MinutesCreateRequest = {
   title: string;
@@ -198,6 +229,14 @@ export type ContentAttachmentResponse = {
   created_at: string;
 };
 
+export type ContentStatus = "draft" | "published" | "archived";
+
+export type ContentWriteRequest = {
+  title: string;
+  content: string;
+  status: ContentStatus;
+};
+
 export type ContentDetailResponse = {
   id: number;
   content_type: "repository" | "guide";
@@ -206,6 +245,19 @@ export type ContentDetailResponse = {
   status: string;
   created_by_name: string;
   updated_by: number | null;
+  created_at: string;
+  updated_at: string;
+  attachments: ContentAttachmentResponse[];
+};
+
+export type ContentAdminDetailResponse = {
+  id: number;
+  content_type: "repository" | "guide";
+  title: string;
+  content: string;
+  status: ContentStatus;
+  created_by_name: string;
+  updated_by_name: string | null;
   created_at: string;
   updated_at: string;
   attachments: ContentAttachmentResponse[];

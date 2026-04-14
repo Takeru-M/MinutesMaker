@@ -71,14 +71,17 @@ export function AdminFeatureListView() {
 
               return (
                 <article key={featureKey} className={styles.card}>
-                  <h2 className={styles.cardTitle}>{t(`adminFeatureList.items.${featureKey}.title`)}</h2>
-                  <p className={styles.cardDescription}>{t(`adminFeatureList.items.${featureKey}.description`)}</p>
                   {href ? (
-                    <Link href={href} className={styles.cardActionLink}>
-                      {t("adminFeatureList.openPage")}
+                    <Link href={href} className={styles.cardLinkWrapper}>
+                      <h2 className={styles.cardTitle}>{t(`adminFeatureList.items.${featureKey}.title`)}</h2>
+                      <p className={styles.cardDescription}>{t(`adminFeatureList.items.${featureKey}.description`)}</p>
                     </Link>
                   ) : (
-                    <p className={styles.cardMeta}>{t("adminFeatureList.comingSoon")}</p>
+                    <>
+                      <h2 className={styles.cardTitle}>{t(`adminFeatureList.items.${featureKey}.title`)}</h2>
+                      <p className={styles.cardDescription}>{t(`adminFeatureList.items.${featureKey}.description`)}</p>
+                      <p className={styles.cardMeta}>{t("adminFeatureList.comingSoon")}</p>
+                    </>
                   )}
                 </article>
               );

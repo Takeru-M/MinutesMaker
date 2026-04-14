@@ -25,6 +25,33 @@ class AgendaCreateRequest(BaseModel):
     related_past_agenda_ids: list[int] = Field(default_factory=list)
     related_other_agenda_ids: list[int] = Field(default_factory=list)
 
+
+class AgendaUpdateRequest(BaseModel):
+    meeting_date: date
+    meeting_type: Literal["dormitory_general_assembly", "block", "annual", "large"]
+    title: str = Field(min_length=1)
+    responsible: Optional[str] = None
+    description: Optional[str] = None
+    content: Optional[str] = None
+    status: str = Field(default="draft")
+    priority: int = Field(default=3, ge=1, le=5)
+    agenda_types: list[str] = Field(default_factory=list)
+    voting_items: Optional[str] = None
+    pdf_s3_key: Optional[str] = None
+    pdf_url: Optional[str] = None
+    related_past_agenda_ids: list[int] = Field(default_factory=list)
+    related_other_agenda_ids: list[int] = Field(default_factory=list)
+
+    @field_validator("meeting_type", mode="before")
+    @classmethod
+    def normalize_meeting_type(cls, v: str) -> str:
+        normalized = (v or "").strip().lower()
+        if normalized == "large":
+            return "dormitory_general_assembly"
+        if normalized in {"dormitory_general_assembly", "block", "annual"}:
+            return normalized
+        return v
+
     @field_validator("meeting_type", mode="before")
     @classmethod
     def normalize_meeting_type(cls, v: str) -> str:
@@ -61,6 +88,8 @@ class AgendaReadResponse(BaseModel):
     updated_at: datetime
     published_at: Optional[datetime]
     deleted_at: Optional[datetime]
+    related_past_agenda_ids: list[int] = Field(default_factory=list)
+    related_other_agenda_ids: list[int] = Field(default_factory=list)
 
 
 class AgendaListItemResponse(BaseModel):

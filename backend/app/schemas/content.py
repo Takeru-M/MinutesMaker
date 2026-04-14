@@ -1,7 +1,16 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
+
+
+ContentStatus = Literal["draft", "published", "archived"]
+
+
+class ContentWriteRequest(BaseModel):
+    title: str
+    content: str = ""
+    status: ContentStatus = "draft"
 
 
 class ContentItemResponse(BaseModel):
@@ -30,6 +39,19 @@ class ContentDetailResponse(BaseModel):
     status: str
     created_by_name: str
     updated_by: Optional[int]
+    created_at: datetime
+    updated_at: datetime
+    attachments: list[ContentAttachmentResponse] = []
+
+
+class ContentAdminDetailResponse(BaseModel):
+    id: int
+    content_type: str
+    title: str
+    content: str
+    status: ContentStatus
+    created_by_name: str
+    updated_by_name: Optional[str]
     created_at: datetime
     updated_at: datetime
     attachments: list[ContentAttachmentResponse] = []

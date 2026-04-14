@@ -3,7 +3,15 @@ from sqlmodel import Session
 
 from app.core.auth_dependencies import require_roles
 from app.core.constants import ROLE_ADMIN, ROLE_AUDITOR, ROLE_ORG_ADMIN, ROLE_USER
-from app.crud.agenda import create_agenda, get_agenda_by_id, list_agendas, search_agendas
+from app.crud.agenda import (
+    create_agenda,
+    delete_agenda,
+    get_agenda_by_id,
+    get_related_agenda_ids,
+    list_agendas,
+    search_agendas,
+    update_agenda,
+)
 from app.db.session import get_session
 from app.schemas.agenda import (
     AgendaCreateRequest,
@@ -11,7 +19,9 @@ from app.schemas.agenda import (
     AgendaPdfUploadResponse,
     AgendaReadResponse,
     AgendaSearchItemResponse,
+    AgendaUpdateRequest,
 )
+from app.core.constants import RELATION_TYPE_OTHER_REFERENCE, RELATION_TYPE_PAST_BLOCK
 from app.services.s3_storage import build_public_s3_url, build_signed_s3_url, upload_agenda_pdf
 
 router = APIRouter(prefix="/agendas", tags=["agendas"])
@@ -70,6 +80,20 @@ def read_agenda(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda not found")
 
     response = AgendaReadResponse.model_validate(agenda)
+    response = response.model_copy(
+        update={
+            "related_past_agenda_ids": get_related_agenda_ids(
+                db,
+                agenda_id=agenda.id or 0,
+                relation_type=RELATION_TYPE_PAST_BLOCK,
+            ),
+            "related_other_agenda_ids": get_related_agenda_ids(
+                db,
+                agenda_id=agenda.id or 0,
+                relation_type=RELATION_TYPE_OTHER_REFERENCE,
+            ),
+        }
+    )
     if agenda.pdf_s3_key:
         try:
             response.pdf_url = build_signed_s3_url(s3_key=agenda.pdf_s3_key)
@@ -88,7 +112,69 @@ def post_agenda(
     current_user=Depends(require_roles(ROLE_ORG_ADMIN, ROLE_ADMIN)),
 ) -> AgendaReadResponse:
     agenda = create_agenda(db, payload=payload, user_id=current_user.id or 0)
-    return AgendaReadResponse.model_validate(agenda)
+    response = AgendaReadResponse.model_validate(agenda)
+    return response.model_copy(
+        update={
+            "related_past_agenda_ids": get_related_agenda_ids(
+                db,
+                agenda_id=agenda.id or 0,
+                relation_type=RELATION_TYPE_PAST_BLOCK,
+            ),
+            "related_other_agenda_ids": get_related_agenda_ids(
+                db,
+                agenda_id=agenda.id or 0,
+                relation_type=RELATION_TYPE_OTHER_REFERENCE,
+            ),
+        }
+    )
+
+
+@router.put("/{agenda_id:int}", response_model=AgendaReadResponse)
+def put_agenda(
+    agenda_id: int,
+    payload: AgendaUpdateRequest,
+    db: Session = Depends(get_session),
+    current_user=Depends(require_roles(ROLE_ORG_ADMIN, ROLE_ADMIN)),
+) -> AgendaReadResponse:
+    agenda = update_agenda(db, agenda_id=agenda_id, payload=payload, user_id=current_user.id or 0)
+    if agenda is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda not found")
+
+    response = AgendaReadResponse.model_validate(agenda)
+    response = response.model_copy(
+        update={
+            "related_past_agenda_ids": get_related_agenda_ids(
+                db,
+                agenda_id=agenda.id or 0,
+                relation_type=RELATION_TYPE_PAST_BLOCK,
+            ),
+            "related_other_agenda_ids": get_related_agenda_ids(
+                db,
+                agenda_id=agenda.id or 0,
+                relation_type=RELATION_TYPE_OTHER_REFERENCE,
+            ),
+        }
+    )
+    if agenda.pdf_s3_key:
+        try:
+            response.pdf_url = build_signed_s3_url(s3_key=agenda.pdf_s3_key)
+        except ValueError:
+            try:
+                response.pdf_url = build_public_s3_url(s3_key=agenda.pdf_s3_key)
+            except ValueError:
+                pass
+    return response
+
+
+@router.delete("/{agenda_id:int}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_agenda(
+    agenda_id: int,
+    db: Session = Depends(get_session),
+    _user=Depends(require_roles(ROLE_ORG_ADMIN, ROLE_ADMIN)),
+) -> None:
+    deleted = delete_agenda(db, agenda_id=agenda_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda not found")
 
 
 @router.post("/upload-pdf", response_model=AgendaPdfUploadResponse, status_code=status.HTTP_201_CREATED)

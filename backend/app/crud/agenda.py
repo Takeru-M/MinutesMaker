@@ -13,12 +13,15 @@ from app.core.constants import (
 from app.models.agenda import Agenda
 from app.models.agenda_relation import AgendaRelation
 from app.models.meeting import Meeting
-from app.schemas.agenda import AgendaCreateRequest
+from app.schemas.agenda import AgendaCreateRequest, AgendaUpdateRequest
 from app.services.s3_storage import build_public_s3_url
 
 
 def list_agendas(db: Session, *, sort_order: str = "default") -> list[tuple[Agenda, Meeting]]:
-    stmt = select(Agenda, Meeting).join(Meeting, Agenda.meeting_id == Meeting.id)
+    stmt = select(Agenda, Meeting).join(Meeting, Agenda.meeting_id == Meeting.id).where(
+        Agenda.deleted_at.is_(None),
+        Agenda.is_active.is_(True),
+    )
     if sort_order == "newest":
         stmt = stmt.order_by(Agenda.created_at.desc(), Agenda.id.desc())
     else:
@@ -33,7 +36,10 @@ def search_agendas(
     meeting_type: str | None,
     limit: int,
 ) -> list[tuple[Agenda, Meeting]]:
-    stmt = select(Agenda, Meeting).join(Meeting, Agenda.meeting_id == Meeting.id)
+    stmt = select(Agenda, Meeting).join(Meeting, Agenda.meeting_id == Meeting.id).where(
+        Agenda.deleted_at.is_(None),
+        Agenda.is_active.is_(True),
+    )
     if query:
         stmt = stmt.where(Agenda.title.ilike(f"%{query}%"))
     if meeting_type:
@@ -44,8 +50,17 @@ def search_agendas(
 
 
 def get_agenda_by_id(db: Session, agenda_id: int) -> Agenda | None:
-    stmt = select(Agenda).where(Agenda.id == agenda_id)
+    stmt = select(Agenda).where(Agenda.id == agenda_id, Agenda.deleted_at.is_(None), Agenda.is_active.is_(True))
     return db.exec(stmt).first()
+
+
+def get_related_agenda_ids(db: Session, *, agenda_id: int, relation_type: str) -> list[int]:
+    stmt = (
+        select(AgendaRelation.target_agenda_id)
+        .where(AgendaRelation.source_agenda_id == agenda_id, AgendaRelation.relation_type == relation_type)
+        .order_by(AgendaRelation.target_agenda_id.asc())
+    )
+    return [row for row in db.exec(stmt).all()]
 
 
 def create_agenda(db: Session, *, payload: AgendaCreateRequest, user_id: int) -> Agenda:
@@ -104,6 +119,90 @@ def create_agenda(db: Session, *, payload: AgendaCreateRequest, user_id: int) ->
     return agenda
 
 
+def update_agenda(db: Session, *, agenda_id: int, payload: AgendaUpdateRequest, user_id: int) -> Agenda | None:
+    agenda = db.exec(select(Agenda).where(Agenda.id == agenda_id, Agenda.deleted_at.is_(None))).first()
+    if agenda is None:
+        return None
+
+    meeting = _get_or_create_meeting(db, payload=payload, user_id=user_id)
+    if meeting.id is None:
+        raise ValueError("Meeting was not persisted")
+
+    target_meeting_id = meeting.id
+    meeting_changed = agenda.meeting_id != target_meeting_id
+
+    normalized_pdf_url = payload.pdf_url
+    if payload.pdf_s3_key:
+        try:
+            normalized_pdf_url = build_public_s3_url(s3_key=payload.pdf_s3_key)
+        except ValueError:
+            normalized_pdf_url = payload.pdf_url
+
+    agenda.title = payload.title
+    agenda.responsible = payload.responsible
+    agenda.description = payload.description
+    agenda.content = payload.content
+    agenda.status = payload.status
+    agenda.priority = payload.priority
+    agenda.agenda_types = payload.agenda_types
+    agenda.voting_items = payload.voting_items
+    agenda.pdf_s3_key = payload.pdf_s3_key
+    agenda.pdf_url = normalized_pdf_url
+    agenda.meeting_id = target_meeting_id
+    agenda.meeting_date = meeting.scheduled_at.date()
+    agenda.meeting_type = meeting.meeting_type
+    if meeting_changed:
+        agenda.order_no = _next_order_no(db, meeting_id=target_meeting_id)
+    agenda.updated_by = user_id
+    agenda.updated_at = datetime.utcnow()
+
+    existing_relations = db.exec(select(AgendaRelation).where(AgendaRelation.source_agenda_id == agenda_id)).all()
+    for relation in existing_relations:
+        db.delete(relation)
+
+    db.add(agenda)
+    db.flush()
+
+    _create_agenda_relations(
+        db,
+        source_agenda_id=agenda.id or agenda_id,
+        target_ids=payload.related_past_agenda_ids,
+        relation_type=RELATION_TYPE_PAST_BLOCK,
+    )
+    _create_agenda_relations(
+        db,
+        source_agenda_id=agenda.id or agenda_id,
+        target_ids=payload.related_other_agenda_ids,
+        relation_type=RELATION_TYPE_OTHER_REFERENCE,
+    )
+
+    db.commit()
+    db.refresh(agenda)
+    return agenda
+
+
+def delete_agenda(db: Session, *, agenda_id: int) -> bool:
+    agenda = db.exec(select(Agenda).where(Agenda.id == agenda_id, Agenda.deleted_at.is_(None))).first()
+    if agenda is None:
+        return False
+
+    for relation in list(
+        db.exec(
+            select(AgendaRelation).where(
+                (AgendaRelation.source_agenda_id == agenda_id) | (AgendaRelation.target_agenda_id == agenda_id)
+            )
+        ).all()
+    ):
+        db.delete(relation)
+
+    agenda.is_active = False
+    agenda.deleted_at = datetime.utcnow()
+    agenda.updated_at = datetime.utcnow()
+    db.add(agenda)
+    db.commit()
+    return True
+
+
 def _next_order_no(db: Session, *, meeting_id: int) -> int:
     current_max = db.exec(
         select(func.max(Agenda.order_no)).where(Agenda.meeting_id == meeting_id)
@@ -131,8 +230,6 @@ def _get_or_create_meeting(db: Session, *, payload: AgendaCreateRequest, user_id
         meeting_type=payload.meeting_type,
         meeting_scale="large" if payload.meeting_type == MEETING_TYPE_LARGE else "small",
         minutes_scope_policy="agenda",
-        participant_count_planned=120 if payload.meeting_type == MEETING_TYPE_LARGE else 60,
-        participant_count_actual=0,
         created_by=user_id,
     )
     db.add(meeting)

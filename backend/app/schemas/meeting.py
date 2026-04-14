@@ -1,7 +1,24 @@
 from datetime import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class MeetingWriteRequest(BaseModel):
+    title: str = Field(min_length=1)
+    description: Optional[str] = None
+    scheduled_at: datetime
+    location: Optional[str] = None
+    status: str = Field(default="scheduled")
+    meeting_type: Literal["dormitory_general_assembly", "block", "department", "committee", "bureau", "annual"]
+
+
+class MeetingCreateRequest(MeetingWriteRequest):
+    pass
+
+
+class MeetingUpdateRequest(MeetingWriteRequest):
+    pass
 
 
 class MeetingAgendaItemResponse(BaseModel):
@@ -33,6 +50,4 @@ class MeetingDetailResponse(BaseModel):
     status: str
     meeting_type: Literal["dormitory_general_assembly", "block", "department", "committee", "bureau", "annual"]
     meeting_scale: Literal["large", "small"]
-    participant_count_planned: Optional[int]
-    participant_count_actual: Optional[int]
     agendas: list[MeetingAgendaItemResponse]

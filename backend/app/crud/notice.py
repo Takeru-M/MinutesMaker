@@ -3,6 +3,7 @@ from datetime import date, datetime, time, timedelta
 from sqlalchemy import func
 from sqlmodel import Session, select
 
+from app.models.notice import NoticeAttachment
 from app.models.notice import Notice
 from app.models.user import User
 from app.schemas.notice import NoticeCreateRequest, NoticeUpdateRequest
@@ -176,3 +177,32 @@ def delete_notice(db: Session, *, notice_id: int, user_id: int) -> bool:
     db.add(notice)
     db.commit()
     return True
+
+
+def get_notice_attachments(db: Session, notice_id: int) -> list[NoticeAttachment]:
+    return db.exec(
+        select(NoticeAttachment)
+        .where(NoticeAttachment.notice_id == notice_id)
+        .order_by(NoticeAttachment.order_no)
+    ).all()
+
+
+def count_notice_attachments(db: Session, notice_id: int) -> int:
+    return len(get_notice_attachments(db, notice_id))
+
+
+def create_notice_attachment(db: Session, attachment: NoticeAttachment) -> NoticeAttachment:
+    db.add(attachment)
+    db.flush()
+    return attachment
+
+
+def get_notice_attachment_by_id(db: Session, attachment_id: int) -> NoticeAttachment | None:
+    return db.exec(select(NoticeAttachment).where(NoticeAttachment.id == attachment_id)).first()
+
+
+def delete_notice_attachment(db: Session, attachment_id: int) -> None:
+    attachment = get_notice_attachment_by_id(db, attachment_id)
+    if attachment:
+        db.delete(attachment)
+        db.flush()

@@ -34,6 +34,17 @@ class NoticeListItemResponse(BaseModel):
     published_at: datetime | None
 
 
+class NoticeAttachmentResponse(BaseModel):
+    id: int
+    file_name: str
+    s3_key: str
+    download_url: str
+    file_size: int
+    mime_type: str
+    order_no: int
+    created_at: datetime
+
+
 class NoticeDetailResponse(BaseModel):
     id: int
     title: str
@@ -41,6 +52,7 @@ class NoticeDetailResponse(BaseModel):
     category: NoticeCategory
     created_by_name: str
     published_at: datetime | None
+    attachments: list[NoticeAttachmentResponse] = Field(default_factory=list)
 
 
 class NoticeAdminListItemResponse(BaseModel):
@@ -67,3 +79,8 @@ class NoticeAdminDetailResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     published_at: datetime | None
+    attachments: list[NoticeAttachmentResponse] = Field(default_factory=list)
+
+
+class NoticeAttachmentUploadResponse(BaseModel):
+    attachment: NoticeAttachmentResponse

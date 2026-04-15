@@ -1,3 +1,5 @@
+export { MembershipResponse } from "@/lib/api-types";
+
 export type AuthRole =
 	| "platform_admin"
 	| "guest_user"

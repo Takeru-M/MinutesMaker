@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { Container } from "@/components/ui/container";
@@ -8,6 +9,7 @@ import { Footer, Header, PageHero } from "@/components/layout";
 import { useI18n } from "@/features/i18n";
 import { apiFetch } from "@/lib/api-client";
 import type {
+  AgendaAttachmentUploadResponse,
   AgendaDetailResponse,
   AgendaListItemResponse,
   MeetingDetailResponse,
@@ -16,6 +18,7 @@ import type {
 import { useAppSelector } from "@/store/hooks";
 import {
   AGENDA_MEETING_TYPE_OPTIONS,
+  AGENDA_TYPE_OPTIONS,
   AGENDA_STATUS_OPTIONS,
   buildMeetingTitle,
   EMPTY_AGENDA_FORM,
@@ -23,8 +26,6 @@ import {
   formatDateTimeLocal,
   MEETING_STATUS_OPTIONS,
   MEETING_TYPE_OPTIONS,
-  parseNumberList,
-  parseStringList,
   type MeetingOperationAgendaFormValues,
   type MeetingOperationMeetingFormValues,
 } from "../types/meeting-operations";
@@ -59,11 +60,16 @@ type MeetingManagementSectionProps = {
 type AgendaManagementSectionProps = {
   agendas: AgendaListItemResponse[];
   agendaForm: MeetingOperationAgendaFormValues;
+  selectedAgendaId: number | null;
+  agendaAttachments: AgendaDetailResponse["attachments"];
+  isAgendaAttachmentUploading: boolean;
   isAgendaSubmitting: boolean;
   agendaMode: "create" | "edit";
   onChangeAgendaForm: (updater: (prev: MeetingOperationAgendaFormValues) => MeetingOperationAgendaFormValues) => void;
   onEditAgenda: (agendaId: number) => void;
   onDeleteAgenda: (agendaId: number) => void;
+  onUploadAgendaAttachment: (file: File) => void;
+  onDeleteAgendaAttachment: (attachmentId: number) => void;
   onResetAgendaForm: () => void;
   onSubmitAgenda: (event: FormEvent<HTMLFormElement>) => void;
 };
@@ -111,6 +117,12 @@ function formatAgendaDate(value: string | null | undefined): string {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
 }
 
 function meetingTypeLabel(value: string): string {
@@ -333,14 +345,47 @@ function MeetingManagementSection({
 function AgendaManagementSection({
   agendas,
   agendaForm,
+  selectedAgendaId,
+  agendaAttachments,
+  isAgendaAttachmentUploading,
   isAgendaSubmitting,
   agendaMode,
   onChangeAgendaForm,
   onEditAgenda,
   onDeleteAgenda,
+  onUploadAgendaAttachment,
+  onDeleteAgendaAttachment,
   onResetAgendaForm,
   onSubmitAgenda,
 }: AgendaManagementSectionProps) {
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const selectablePastAgendas = agendas.filter((agenda) => agenda.meeting_type === "block" && agenda.id !== selectedAgendaId);
+  const selectableOtherAgendas = agendas.filter((agenda) => agenda.id !== selectedAgendaId);
+
+  const handleMultiSelectNumberChange = (
+    event: ChangeEvent<HTMLSelectElement>,
+    field: "relatedPastAgendaIds" | "relatedOtherAgendaIds",
+  ) => {
+    const values = Array.from(event.target.selectedOptions)
+      .map((option) => Number.parseInt(option.value, 10))
+      .filter((value) => Number.isFinite(value));
+    onChangeAgendaForm((prev) => ({ ...prev, [field]: values }));
+  };
+
+  const handleMultiSelectStringChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const values = Array.from(event.target.selectedOptions).map((option) => option.value);
+    onChangeAgendaForm((prev) => ({ ...prev, agendaTypes: values }));
+  };
+
+  const handleAttachmentFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      return;
+    }
+    onUploadAgendaAttachment(file);
+    event.target.value = "";
+  };
+
   return (
     <article className={styles.section}>
       <div className={styles.sectionHeader}>
@@ -481,33 +526,14 @@ function AgendaManagementSection({
 
             <label className={styles.field}>
               <span className={styles.label}>議案種別</span>
-              <input
-                className={styles.input}
-                type="text"
-                value={agendaForm.agendaTypes}
-                onChange={(event) => onChangeAgendaForm((prev) => ({ ...prev, agendaTypes: event.target.value }))}
-              />
-              <p className={styles.helpText}>カンマまたは改行で区切って入力してください。</p>
-            </label>
-
-            <label className={styles.field}>
-              <span className={styles.label}>PDF S3 キー</span>
-              <input
-                className={styles.input}
-                type="text"
-                value={agendaForm.pdfS3Key}
-                onChange={(event) => onChangeAgendaForm((prev) => ({ ...prev, pdfS3Key: event.target.value }))}
-              />
-            </label>
-
-            <label className={styles.field}>
-              <span className={styles.label}>PDF URL</span>
-              <input
-                className={styles.input}
-                type="text"
-                value={agendaForm.pdfUrl}
-                onChange={(event) => onChangeAgendaForm((prev) => ({ ...prev, pdfUrl: event.target.value }))}
-              />
+              <select className={styles.select} multiple value={agendaForm.agendaTypes} onChange={handleMultiSelectStringChange}>
+                {AGENDA_TYPE_OPTIONS.map((typeOption) => (
+                  <option key={typeOption.value} value={typeOption.value}>
+                    {typeOption.label}
+                  </option>
+                ))}
+              </select>
+              <p className={styles.helpText}>複数選択できます（Mac: Command + クリック）。</p>
             </label>
 
             <label className={`${styles.field} ${styles.fieldWide}`}>
@@ -539,21 +565,78 @@ function AgendaManagementSection({
 
             <label className={`${styles.field} ${styles.fieldWide}`}>
               <span className={styles.label}>過去の議案ID</span>
-              <textarea
-                className={styles.textarea}
-                value={agendaForm.relatedPastAgendaIds}
-                onChange={(event) => onChangeAgendaForm((prev) => ({ ...prev, relatedPastAgendaIds: event.target.value }))}
-              />
+              <select
+                className={styles.select}
+                multiple
+                value={agendaForm.relatedPastAgendaIds.map(String)}
+                onChange={(event) => handleMultiSelectNumberChange(event, "relatedPastAgendaIds")}
+              >
+                {selectablePastAgendas.map((agenda) => (
+                  <option key={`past-${agenda.id}`} value={agenda.id}>
+                    {`#${agenda.id} ${agenda.title}`}
+                  </option>
+                ))}
+              </select>
+              <p className={styles.helpText}>ブロック会議の議案から選択できます。</p>
             </label>
 
             <label className={`${styles.field} ${styles.fieldWide}`}>
               <span className={styles.label}>その他の関連議案ID</span>
-              <textarea
-                className={styles.textarea}
-                value={agendaForm.relatedOtherAgendaIds}
-                onChange={(event) => onChangeAgendaForm((prev) => ({ ...prev, relatedOtherAgendaIds: event.target.value }))}
-              />
+              <select
+                className={styles.select}
+                multiple
+                value={agendaForm.relatedOtherAgendaIds.map(String)}
+                onChange={(event) => handleMultiSelectNumberChange(event, "relatedOtherAgendaIds")}
+              >
+                {selectableOtherAgendas.map((agenda) => (
+                  <option key={`other-${agenda.id}`} value={agenda.id}>
+                    {`#${agenda.id} ${agenda.title}`}
+                  </option>
+                ))}
+              </select>
+              <p className={styles.helpText}>会議種別を問わず選択できます。</p>
             </label>
+
+            <div className={`${styles.field} ${styles.fieldWide}`}>
+              <span className={styles.label}>PDF添付</span>
+              <p className={styles.helpText}>最大3件 / 1ファイル最大15MB / PDFのみ</p>
+              <div className={styles.buttonRow}>
+                <input
+                  ref={attachmentInputRef}
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  className={styles.input}
+                  disabled={selectedAgendaId === null || isAgendaAttachmentUploading || agendaAttachments.length >= 3}
+                  onChange={handleAttachmentFileChange}
+                />
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  disabled={selectedAgendaId === null || isAgendaAttachmentUploading || agendaAttachments.length >= 3}
+                  onClick={() => attachmentInputRef.current?.click()}
+                >
+                  {isAgendaAttachmentUploading ? "アップロード中..." : "PDFをアップロード"}
+                </button>
+              </div>
+
+              {agendaAttachments.length > 0 ? (
+                <ul className={styles.attachmentList}>
+                  {agendaAttachments.map((attachment) => (
+                    <li key={attachment.id} className={styles.attachmentItem}>
+                      <a href={attachment.download_url || "#"} target="_blank" rel="noopener noreferrer">
+                        {attachment.file_name}
+                      </a>
+                      <span>{formatFileSize(attachment.file_size)}</span>
+                      <button type="button" className={styles.dangerButton} onClick={() => onDeleteAgendaAttachment(attachment.id)}>
+                        添付を削除
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.helpText}>添付ファイルはありません。</p>
+              )}
+            </div>
           </div>
 
           <div className={styles.formActions}>
@@ -587,6 +670,8 @@ export function AdminMeetingOperationsPageView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isMeetingSubmitting, setIsMeetingSubmitting] = useState(false);
   const [isAgendaSubmitting, setIsAgendaSubmitting] = useState(false);
+  const [isAgendaAttachmentUploading, setIsAgendaAttachmentUploading] = useState(false);
+  const [selectedAgendaAttachments, setSelectedAgendaAttachments] = useState<AgendaDetailResponse["attachments"]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -605,7 +690,6 @@ export function AdminMeetingOperationsPageView() {
         formatDate(meeting.scheduled_at),
         meetingTypeLabel(meeting.meeting_type),
         meeting.location ?? "",
-        meeting.status,
       ]
         .join(" ")
         .toLowerCase();
@@ -730,13 +814,12 @@ export function AdminMeetingOperationsPageView() {
       content: agenda.content ?? "",
       status: agenda.status,
       priority: agenda.priority.toString(),
-      agendaTypes: agenda.agenda_types.join(", "),
+      agendaTypes: agenda.agenda_types,
       votingItems: agenda.voting_items ?? "",
-      pdfS3Key: agenda.pdf_s3_key ?? "",
-      pdfUrl: agenda.pdf_url ?? "",
-      relatedPastAgendaIds: agenda.related_past_agenda_ids.join(", "),
-      relatedOtherAgendaIds: agenda.related_other_agenda_ids.join(", "),
+      relatedPastAgendaIds: agenda.related_past_agenda_ids,
+      relatedOtherAgendaIds: agenda.related_other_agenda_ids,
     });
+    setSelectedAgendaAttachments(agenda.attachments ?? []);
   };
 
   const resetMeetingForm = () => {
@@ -747,6 +830,7 @@ export function AdminMeetingOperationsPageView() {
   const resetAgendaForm = () => {
     setSelectedAgendaId(null);
     setAgendaForm(EMPTY_AGENDA_FORM);
+    setSelectedAgendaAttachments([]);
   };
 
   const handleMeetingSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -809,12 +893,12 @@ export function AdminMeetingOperationsPageView() {
       content: agendaForm.content.trim() || null,
       status: agendaForm.status.trim(),
       priority: Number.parseInt(agendaForm.priority, 10),
-      agenda_types: parseStringList(agendaForm.agendaTypes),
+      agenda_types: agendaForm.agendaTypes,
       voting_items: agendaForm.votingItems.trim() || null,
-      pdf_s3_key: agendaForm.pdfS3Key.trim() || null,
-      pdf_url: agendaForm.pdfUrl.trim() || null,
-      related_past_agenda_ids: parseNumberList(agendaForm.relatedPastAgendaIds),
-      related_other_agenda_ids: parseNumberList(agendaForm.relatedOtherAgendaIds),
+      pdf_s3_key: null,
+      pdf_url: null,
+      related_past_agenda_ids: agendaForm.relatedPastAgendaIds,
+      related_other_agenda_ids: agendaForm.relatedOtherAgendaIds,
     };
 
     try {
@@ -889,6 +973,69 @@ export function AdminMeetingOperationsPageView() {
     await refreshData();
   };
 
+  const handleAgendaAttachmentUpload = async (file: File) => {
+    if (selectedAgendaId === null) {
+      setErrorMessage("先に議案を作成または選択してください。");
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setErrorMessage("PDFファイル（.pdf）のみアップロードできます。");
+      return;
+    }
+
+    setIsAgendaAttachmentUploading(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const response = await apiFetch(`/api/v1/agendas/${selectedAgendaId}/attachments/upload-pdf`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        setErrorMessage(await readErrorMessage(response, "議案添付のアップロードに失敗しました。"));
+        return;
+      }
+      const data = (await response.json()) as AgendaAttachmentUploadResponse;
+      setSelectedAgendaAttachments((prev) => [...prev, data.attachment]);
+      setStatusMessage("議案添付をアップロードしました。");
+    } catch (error) {
+      console.error("Failed to upload agenda attachment:", error);
+      setErrorMessage("議案添付のアップロードに失敗しました。");
+    } finally {
+      setIsAgendaAttachmentUploading(false);
+    }
+  };
+
+  const handleAgendaAttachmentDelete = async (attachmentId: number) => {
+    if (selectedAgendaId === null) {
+      return;
+    }
+    if (!window.confirm("この添付ファイルを削除しますか？")) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setStatusMessage(null);
+    try {
+      const response = await apiFetch(`/api/v1/agendas/${selectedAgendaId}/attachments/${attachmentId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok && response.status !== 204) {
+        setErrorMessage(await readErrorMessage(response, "議案添付の削除に失敗しました。"));
+        return;
+      }
+
+      setSelectedAgendaAttachments((prev) => prev.filter((item) => item.id !== attachmentId));
+      setStatusMessage("議案添付を削除しました。");
+    } catch (error) {
+      console.error("Failed to delete agenda attachment:", error);
+      setErrorMessage("議案添付の削除に失敗しました。");
+    }
+  };
+
   if (selectedFeature === null) {
     return (
       <AdminFeaturePageShell
@@ -907,10 +1054,6 @@ export function AdminMeetingOperationsPageView() {
             title: t("adminMeetingOperationsPage.items.agendaManage.title"),
             description: t("adminMeetingOperationsPage.items.agendaManage.description"),
             onClick: () => setSelectedFeature("agenda"),
-          },
-          {
-            title: t("adminMeetingOperationsPage.items.minutesWorkflow.title"),
-            description: t("adminMeetingOperationsPage.items.minutesWorkflow.description"),
           },
         ]}
       />
@@ -940,17 +1083,27 @@ export function AdminMeetingOperationsPageView() {
       <Header />
       <Container>
         <main className={styles.main}>
+          <div className={styles.breadcrumb}>
+            <Link href="/admin/features" className={styles.breadcrumbLink}>
+              管理者機能一覧
+            </Link>
+            <span className={styles.breadcrumbSeparator}>/</span>
+            <button type="button" className={styles.breadcrumbButton} onClick={() => setSelectedFeature(null)}>
+              会議運用管理
+            </button>
+            <span className={styles.breadcrumbSeparator}>/</span>
+            <span className={styles.breadcrumbCurrent}>
+              {selectedFeature === "meeting"
+                ? t("adminMeetingOperationsPage.items.meetingManage.title")
+                : t("adminMeetingOperationsPage.items.agendaManage.title")}
+            </span>
+          </div>
+
           <PageHero
             badge={t("adminMeetingOperationsPage.badge")}
             title={t("adminMeetingOperationsPage.title")}
             description={t("adminMeetingOperationsPage.description")}
-          >
-            <div className={styles.buttonRow}>
-              <button type="button" className={styles.secondaryButton} onClick={() => setSelectedFeature(null)}>
-                機能一覧に戻る
-              </button>
-            </div>
-          </PageHero>
+          />
 
           {statusMessage ? <p className={styles.message}>{statusMessage}</p> : null}
           {errorMessage ? <p className={`${styles.message} ${styles.errorMessage}`}>{errorMessage}</p> : null}
@@ -991,11 +1144,16 @@ export function AdminMeetingOperationsPageView() {
               <AgendaManagementSection
                 agendas={agendas}
                 agendaForm={agendaForm}
+                selectedAgendaId={selectedAgendaId}
+                agendaAttachments={selectedAgendaAttachments}
+                isAgendaAttachmentUploading={isAgendaAttachmentUploading}
                 isAgendaSubmitting={isAgendaSubmitting}
                 agendaMode={agendaMode}
                 onChangeAgendaForm={(updater) => setAgendaForm(updater)}
                 onEditAgenda={(id) => void handleAgendaEdit(id)}
                 onDeleteAgenda={(id) => void handleAgendaDelete(id)}
+                onUploadAgendaAttachment={(file) => void handleAgendaAttachmentUpload(file)}
+                onDeleteAgendaAttachment={(id) => void handleAgendaAttachmentDelete(id)}
                 onResetAgendaForm={resetAgendaForm}
                 onSubmitAgenda={(event) => void handleAgendaSubmit(event)}
               />

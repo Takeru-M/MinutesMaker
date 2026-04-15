@@ -24,3 +24,17 @@ class Notice(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     published_at: Optional[datetime] = Field(default=None)
     deleted_at: Optional[datetime] = Field(default=None)
+
+
+class NoticeAttachment(SQLModel, table=True):
+    __tablename__ = "notice_attachments"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    notice_id: int = Field(foreign_key="notices.id", nullable=False, index=True)
+    file_name: str = Field(nullable=False)
+    s3_key: str = Field(nullable=False, unique=True)
+    file_size: int = Field(nullable=False)
+    mime_type: str = Field(default="application/pdf", nullable=False)
+    order_no: int = Field(default=0, nullable=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)

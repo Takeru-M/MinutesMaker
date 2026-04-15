@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
-from app.core.auth_dependencies import require_roles
-from app.core.constants import ROLE_ADMIN, ROLE_AUDITOR, ROLE_ORG_ADMIN, ROLE_USER
+from app.core.auth_dependencies import require_permissions
 from app.db.session import get_session
 from app.schemas.meeting_qa import (
     MeetingKnowledgeIngestResponse,
@@ -22,7 +21,7 @@ router = APIRouter(prefix="/meetings", tags=["meeting-qa"])
 def ingest_meeting_knowledge_endpoint(
     meeting_id: int,
     db: Session = Depends(get_session),
-    current_user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    current_user=Depends(require_permissions("meeting.qa.ingest")),
 ) -> MeetingKnowledgeIngestResponse:
     try:
         if not can_access_meeting(db, meeting_id=meeting_id, user=current_user):
@@ -50,7 +49,7 @@ def ask_meeting_question_endpoint(
     meeting_id: int,
     payload: MeetingQARequest,
     db: Session = Depends(get_session),
-    current_user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN, ROLE_AUDITOR)),
+    current_user=Depends(require_permissions("meeting.qa.ask")),
 ) -> MeetingQAResponse:
     try:
         if not can_access_meeting(db, meeting_id=meeting_id, user=current_user):

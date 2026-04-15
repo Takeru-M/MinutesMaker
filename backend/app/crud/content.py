@@ -185,6 +185,14 @@ def get_content_attachments(db: Session, content_id: int) -> list[ContentAttachm
     ).all()
 
 
+def count_content_attachments(db: Session, content_id: int) -> int:
+    return len(get_content_attachments(db, content_id))
+
+
+def get_content_attachment_by_id(db: Session, attachment_id: int) -> ContentAttachment | None:
+    return db.exec(select(ContentAttachment).where(ContentAttachment.id == attachment_id)).first()
+
+
 def create_content_attachment(db: Session, attachment: ContentAttachment) -> ContentAttachment:
     db.add(attachment)
     db.flush()

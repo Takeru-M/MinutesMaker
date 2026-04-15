@@ -101,6 +101,7 @@ export const jaMessages: TranslationNode = {
   },
   adminFeatureCommon: {
     featureList: "管理者機能一覧",
+      home: "ホーム",
     restrictedNotice: "このページは管理者ロールのみ利用できます。",
     operationExamples: "主な操作",
   },

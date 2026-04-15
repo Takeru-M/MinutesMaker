@@ -11,6 +11,7 @@ from app.db.seeds import (
     seed_contents,
     seed_default_user_role_assignments,
     seed_notices,
+    seed_organizations_and_memberships,
     seed_roles_and_permissions,
     seed_sample_agendas,
     seed_sample_users,
@@ -67,6 +68,10 @@ def init_db() -> None:
                 # ロール・権限の初期データを作成
                 seed_roles_and_permissions(db)
                 logger.info("✓ Seeded roles and permissions")
+
+                # 団体とメンバーシップを作成
+                seed_organizations_and_memberships(db)
+                logger.info("✓ Seeded organizations and memberships")
 
                 # 既存ユーザーとロールを紐付け
                 seed_default_user_role_assignments(db)
@@ -186,6 +191,52 @@ def _ensure_schema_compatibility() -> None:
             minute_indexes = {idx.get("name") for idx in inspector.get_indexes("minutes")}
             if "ix_minutes_content_type" not in minute_indexes:
                 conn.execute(text("CREATE INDEX ix_minutes_content_type ON minutes (content_type)"))
+
+        if "notice_attachments" not in table_names and "notices" in table_names:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE notice_attachments (
+                        id INT NOT NULL AUTO_INCREMENT,
+                        notice_id INT NOT NULL,
+                        file_name VARCHAR(255) NOT NULL,
+                        s3_key VARCHAR(255) NOT NULL,
+                        file_size INT NOT NULL,
+                        mime_type VARCHAR(255) NOT NULL,
+                        order_no INT NOT NULL,
+                        created_at DATETIME NOT NULL,
+                        updated_at DATETIME NOT NULL,
+                        PRIMARY KEY (id),
+                        CONSTRAINT fk_notice_attachments_notice_id FOREIGN KEY (notice_id) REFERENCES notices (id),
+                        UNIQUE INDEX ix_notice_attachments_s3_key (s3_key),
+                        INDEX ix_notice_attachments_notice_id (notice_id)
+                    )
+                    """
+                )
+            )
+
+        if "agenda_attachments" not in table_names and "agendas" in table_names:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE agenda_attachments (
+                        id INT NOT NULL AUTO_INCREMENT,
+                        agenda_id INT NOT NULL,
+                        file_name VARCHAR(255) NOT NULL,
+                        s3_key VARCHAR(255) NOT NULL,
+                        file_size INT NOT NULL,
+                        mime_type VARCHAR(255) NOT NULL,
+                        order_no INT NOT NULL,
+                        created_at DATETIME NOT NULL,
+                        updated_at DATETIME NOT NULL,
+                        PRIMARY KEY (id),
+                        CONSTRAINT fk_agenda_attachments_agenda_id FOREIGN KEY (agenda_id) REFERENCES agendas (id),
+                        UNIQUE INDEX ix_agenda_attachments_s3_key (s3_key),
+                        INDEX ix_agenda_attachments_agenda_id (agenda_id)
+                    )
+                    """
+                )
+            )
 
 
 def _ensure_mysql_utf8mb4() -> None:

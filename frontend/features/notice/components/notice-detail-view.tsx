@@ -89,6 +89,12 @@ export function NoticeDetailView({ noticeId }: NoticeDetailViewProps) {
     return t("noticeDetailView.categories.info");
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.bgGlowTop} aria-hidden="true" />
@@ -147,6 +153,29 @@ export function NoticeDetailView({ noticeId }: NoticeDetailViewProps) {
               <section className={styles.contentSection}>
                 <h4 className={styles.contentHeading}>{t("noticeDetailView.fields.content")}</h4>
                 <p className={styles.contentBody}>{notice.content || "-"}</p>
+              </section>
+
+              <section className={styles.contentSection}>
+                <h4 className={styles.contentHeading}>添付ファイル</h4>
+                {notice.attachments.length === 0 ? (
+                  <p className={styles.contentBody}>添付ファイルはありません。</p>
+                ) : (
+                  <ul className={styles.attachmentList}>
+                    {notice.attachments.map((attachment) => (
+                      <li key={attachment.id} className={styles.attachmentItem}>
+                        <span>{`${attachment.file_name} (${formatFileSize(attachment.file_size)})`}</span>
+                        <a
+                          href={attachment.download_url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.downloadLink}
+                        >
+                          ダウンロード
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </section>
             </section>
           ) : null}

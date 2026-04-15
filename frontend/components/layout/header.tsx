@@ -10,6 +10,7 @@ import { logout } from "@/lib/api-client";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutSucceeded } from "@/store/slices/auth-slice";
 import styles from "./header.module.css";
+const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 export function Header() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement | null>(null);
   const cannotSubmitAgendaRoles = new Set(["guest_user", "auditor", "org_user", "user"]);
+  const canAccessAdminFeatures = auth.isAuthenticated && !!auth.role && ADMIN_ROLES.has(auth.role);
 
   const navItems = useMemo(
     () => [
@@ -29,8 +31,9 @@ export function Header() {
       { label: t("header.nav.notice"), href: "/notice" },
       { label: t("header.nav.repository"), href: "/repository" },
       { label: t("header.nav.guide"), href: "/guide" },
+      ...(canAccessAdminFeatures ? [{ label: t("adminFeatureCommon.featureList"), href: "/admin/features" }] : []),
     ],
-    [t],
+    [canAccessAdminFeatures, t],
   );
 
   useEffect(() => {
@@ -89,7 +92,7 @@ export function Header() {
 
   return (
     <header className={styles.header}>
-      <Container>
+      <Container className={styles.headerContainer}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brandArea}>
             <p className={styles.brandLabel}>{t("common.appLabel")}</p>

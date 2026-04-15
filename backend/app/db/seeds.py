@@ -28,6 +28,7 @@ from app.models.agenda_relation import AgendaRelation
 from app.models.content import Content
 from app.models.meeting import Meeting
 from app.models.notice import Notice
+from app.models.organization import Organization, OrganizationMembership
 from app.models.role import Permission, Role, RolePermission, UserRole
 from app.models.user import User
 
@@ -103,6 +104,12 @@ def seed_sample_users(db: Session) -> None:
             "role": ROLE_GUEST_USER,
             "full_name": "Guest Viewer",
         },
+        {
+            "username": "multi-org-user",
+            "password": "Password123!",
+            "role": ROLE_USER,
+            "full_name": "Multi Organization User",
+        },
     )
 
     for spec in sample_users:
@@ -122,6 +129,69 @@ def seed_sample_users(db: Session) -> None:
         user.password_hash = get_password_hash(spec["password"])
         user.full_name = spec["full_name"]
         user.is_active = True
+
+    db.commit()
+
+
+def seed_organizations_and_memberships(db: Session) -> None:
+    org_specs = (
+        {"slug": "organization-a", "name": "Organization A"},
+        {"slug": "organization-b", "name": "Organization B"},
+    )
+    organizations: dict[str, Organization] = {}
+
+    for spec in org_specs:
+        organization = db.exec(select(Organization).where(Organization.slug == spec["slug"])).first()
+        if organization is None:
+            organization = Organization(name=spec["name"], slug=spec["slug"], is_active=True)
+            db.add(organization)
+            db.flush()
+        organizations[spec["slug"]] = organization
+
+    role_map = {role.name: role for role in db.exec(select(Role)).all()}
+    membership_specs = (
+        ("org-admin-a", "organization-a", ROLE_ORG_ADMIN, True),
+        ("org-user-a", "organization-a", ROLE_ORG_USER, True),
+        ("org-user-b", "organization-b", ROLE_ORG_USER, True),
+        ("auditor-a", "organization-a", ROLE_AUDITOR, True),
+        ("multi-org-user", "organization-a", ROLE_ORG_USER, True),
+        ("multi-org-user", "organization-b", ROLE_ORG_ADMIN, False),
+    )
+
+    for username, org_slug, role_name, is_primary in membership_specs:
+        user = db.exec(select(User).where(User.username == username)).first()
+        organization = organizations.get(org_slug)
+        role = role_map.get(role_name)
+        if (
+            user is None
+            or organization is None
+            or role is None
+            or user.id is None
+            or organization.id is None
+            or role.id is None
+        ):
+            continue
+
+        membership = db.exec(
+            select(OrganizationMembership).where(
+                OrganizationMembership.user_id == user.id,
+                OrganizationMembership.organization_id == organization.id,
+            )
+        ).first()
+        if membership is None:
+            db.add(
+                OrganizationMembership(
+                    user_id=user.id,
+                    organization_id=organization.id,
+                    role_id=role.id,
+                    is_primary=is_primary,
+                    assigned_by=user.id,
+                )
+            )
+        else:
+            membership.role_id = role.id
+            membership.is_primary = is_primary
+            membership.is_active = True
 
     db.commit()
 

@@ -17,7 +17,6 @@ export function HomeView() {
   const [latestAgenda, setLatestAgenda] = useState<AgendaListItemResponse[]>([]);
   const [latestNotices, setLatestNotices] = useState<NoticeListItemResponse[]>([]);
   const [latestMeeting, setLatestMeeting] = useState<MeetingListItemResponse | null>(null);
-  const adminRoles = new Set(["platform_admin", "org_admin", "admin"]);
 
   useEffect(() => {
     const fetchAgendas = async () => {
@@ -78,8 +77,6 @@ export function HomeView() {
       }).format(new Date(latestMeeting.scheduled_at))
     : t("home.latestMeetingEmpty");
 
-  const canAccessAdminFeatures = auth.isAuthenticated && !!auth.role && adminRoles.has(auth.role);
-
   const otherLinks = [
     { label: t("home.others.o2"), href: "/agenda" },
     { label: t("home.others.o3"), href: "/agenda" },
@@ -119,15 +116,6 @@ export function HomeView() {
                   →
                 </span>
               </Link>
-              {canAccessAdminFeatures ? (
-                <Link href="/admin/features" className={styles.meetingActionCard}>
-                  <span className={styles.meetingActionMain}>{t("home.adminFeaturesActionTitle")}</span>
-                  <span className={styles.meetingActionSub}>{t("home.adminFeaturesActionDescription")}</span>
-                  <span className={styles.meetingActionArrow} aria-hidden="true">
-                    →
-                  </span>
-                </Link>
-              ) : null}
             </div>
             {!auth.isAuthenticated ? (
               <p className={styles.adminHintText}>

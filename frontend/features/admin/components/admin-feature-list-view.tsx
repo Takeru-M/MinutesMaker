@@ -1,35 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 import { Footer, Header, PageHero } from "@/components/layout";
 import { Container } from "@/components/ui/container";
 import { useI18n } from "@/features/i18n";
 import { useAppSelector } from "@/store/hooks";
+import { ForbiddenPage } from "@/components/guards/permission-guard";
+import { useCanInCurrentOrg } from "@/hooks/use-permissions";
 import styles from "./admin-feature-list-view.module.css";
 
 const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 export function AdminFeatureListView() {
-  const router = useRouter();
-  const auth = useAppSelector((state) => state.auth);
   const { t } = useI18n();
+  const auth = useAppSelector((state) => state.auth);
+  const canAccessInCurrentOrg = useCanInCurrentOrg("org.read");
+  const hasAdminRole = auth.role ? ADMIN_ROLES.has(auth.role) : false;
+  const canAccessAdmin = hasAdminRole || canAccessInCurrentOrg;
 
-  useEffect(() => {
-    if (!auth.isAuthenticated) {
-      router.replace("/login?redirect=%2Fadmin%2Ffeatures");
-      return;
-    }
-
-    if (auth.role && !ADMIN_ROLES.has(auth.role)) {
-      router.replace("/");
-    }
-  }, [auth.isAuthenticated, auth.role, router]);
-
-  if (!auth.isAuthenticated || !auth.role || !ADMIN_ROLES.has(auth.role)) {
-    return null;
+  if (!canAccessAdmin) {
+    return <ForbiddenPage message="Admin access required" locale="en" />;
   }
 
   const featureKeys = [
@@ -57,6 +48,13 @@ export function AdminFeatureListView() {
       <Header />
       <Container>
         <main className={styles.main}>
+                    <div className={styles.breadcrumb}>
+                      <Link href="/" className={styles.breadcrumbLink}>
+                        {t("adminFeatureCommon.home")}
+                      </Link>
+                      <span className={styles.breadcrumbCurrent}>/ {t("adminFeatureCommon.featureList")}</span>
+                    </div>
+
           <PageHero
             badge={t("adminFeatureList.badge")}
             title={t("adminFeatureList.title")}

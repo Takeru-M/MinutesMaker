@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
@@ -8,6 +7,7 @@ import { Footer, Header, PageHero } from "@/components/layout";
 import { Container } from "@/components/ui/container";
 import { AdminListSearchBar } from "./admin-list-search-bar";
 import { useAppSelector } from "@/store/hooks";
+import Link from "next/link";
 import styles from "./admin-account-management-page-view.module.css";
 
 const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
@@ -18,7 +18,7 @@ type UserManagementItem = {
   id: number;
   username: string;
   fullName: string;
-  affiliation: string;
+  affiliation: string[];
   role: string;
   status: UserStatus;
   updatedAt: string;
@@ -37,7 +37,7 @@ const INITIAL_USERS: UserManagementItem[] = [
     id: 1,
     username: "admin01",
     fullName: "山田 太郎",
-    affiliation: "総務部",
+    affiliation: ["general_affairs_department"],
     role: "platform_admin",
     status: "active",
     updatedAt: "2026-04-12T09:30:00+09:00",
@@ -46,7 +46,7 @@ const INITIAL_USERS: UserManagementItem[] = [
     id: 2,
     username: "org-user-01",
     fullName: "佐藤 花子",
-    affiliation: "運営部",
+    affiliation: ["information_committee", "public_relations_bureau"],
     role: "org_user",
     status: "active",
     updatedAt: "2026-04-11T15:20:00+09:00",
@@ -55,12 +55,59 @@ const INITIAL_USERS: UserManagementItem[] = [
     id: 3,
     username: "auditor-team",
     fullName: "監査 担当",
-    affiliation: "監査室",
+    affiliation: ["inspection_committee"],
     role: "auditor",
     status: "inactive",
     updatedAt: "2026-04-10T10:00:00+09:00",
   },
 ];
+
+const DEPARTMENT_TYPES = [
+  { value: "culture_department", label: "文化部" },
+  { value: "cooking_department", label: "炊事部" },
+  { value: "general_affairs_department", label: "庶務部" },
+  { value: "welfare_department", label: "厚生部" },
+  { value: "human_rights_department", label: "人権擁護部" },
+] as const;
+
+const COMMITTEE_TYPES = [
+  { value: "election_management_committee", label: "選挙管理委員会" },
+  { value: "entry_exit_selection_committee", label: "入退寮選考委員会" },
+  { value: "information_committee", label: "情報委員会" },
+  { value: "inspection_committee", label: "監察委員会" },
+] as const;
+
+const BUREAU_TYPES = [
+  { value: "muc", label: "MUC" },
+  { value: "disaster_response_bureau", label: "対処分戦略推進局" },
+  { value: "public_relations_bureau", label: "広報局" },
+  { value: "expansion_construction_bureau", label: "増築建設局" },
+  { value: "external_liaison_bureau", label: "寮外連携局" },
+  { value: "international_exchange_bureau", label: "国際交流局" },
+  { value: "sc", label: "SC" },
+] as const;
+
+const AFFILIATION_LABELS = new Map(
+  [...DEPARTMENT_TYPES, ...COMMITTEE_TYPES, ...BUREAU_TYPES].map((option) => [option.value, option.label]),
+);
+
+const AFFILIATION_OPTION_GROUPS = [
+  { key: "department_types", title: "department_types", options: DEPARTMENT_TYPES },
+  { key: "committee_types", title: "committee_types", options: COMMITTEE_TYPES },
+  { key: "bureau_types", title: "bureau_types", options: BUREAU_TYPES },
+] as const;
+
+function formatAffiliation(values: string[]): string {
+  if (values.length === 0) {
+    return "-";
+  }
+
+  return values.map((value) => AFFILIATION_LABELS.get(value) ?? value).join(" / ");
+}
+
+function getAffiliationLabel(value: string): string {
+  return AFFILIATION_LABELS.get(value) ?? value;
+}
 
 const INITIAL_ASSIGNMENTS: RoleAssignmentItem[] = [
   {
@@ -137,16 +184,14 @@ function ManagementShell({
       <Header />
       <Container>
         <main className={styles.main}>
-          <PageHero badge={badge} title={title} description={description}>
-            <div className={styles.buttonRow}>
-              <Link href="/admin/features/account-permission" className={styles.secondaryButton}>
-                アカウント / 権限管理へ
-              </Link>
-              <Link href="/admin/features" className={styles.secondaryButton}>
-                管理者機能一覧へ
-              </Link>
-            </div>
-          </PageHero>
+                    <div className={styles.breadcrumb}>
+                      <Link href="/admin/features" className={styles.breadcrumbLink}>
+                        管理者機能一覧
+                      </Link>
+                      <span className={styles.breadcrumbCurrent}>/ {title}</span>
+                    </div>
+
+          <PageHero badge={badge} title={title} description={description} />
 
           {children}
         </main>
@@ -161,12 +206,13 @@ export function AdminUserManagementPageView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isFullNameCustomized, setIsFullNameCustomized] = useState(false);
 
   const selectedUser = useMemo(() => users.find((user) => user.id === selectedId) ?? null, [users, selectedId]);
   const [form, setForm] = useState<Omit<UserManagementItem, "id" | "updatedAt">>({
     username: "",
     fullName: "",
-    affiliation: "",
+    affiliation: [],
     role: "org_user",
     status: "active",
   });
@@ -178,7 +224,16 @@ export function AdminUserManagementPageView() {
     }
 
     return users.filter((user) => {
-      const haystack = [user.username, user.fullName, user.affiliation, user.role, user.status].join(" ").toLowerCase();
+      const haystack = [
+        user.username,
+        user.fullName,
+        formatAffiliation(user.affiliation),
+        user.affiliation.join(" "),
+        user.role,
+        user.status,
+      ]
+        .join(" ")
+        .toLowerCase();
       return haystack.includes(normalized);
     });
   }, [searchQuery, users]);
@@ -187,10 +242,11 @@ export function AdminUserManagementPageView() {
 
   const resetForm = () => {
     setSelectedId(null);
+    setIsFullNameCustomized(false);
     setForm({
       username: "",
       fullName: "",
-      affiliation: "",
+      affiliation: [],
       role: "org_user",
       status: "active",
     });
@@ -198,6 +254,7 @@ export function AdminUserManagementPageView() {
 
   const startEdit = (user: UserManagementItem) => {
     setSelectedId(user.id);
+    setIsFullNameCustomized(true);
     setForm({
       username: user.username,
       fullName: user.fullName,
@@ -208,8 +265,24 @@ export function AdminUserManagementPageView() {
     setStatusMessage(null);
   };
 
+  const handleUsernameBlur = () => {
+    if (isFullNameCustomized) {
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      fullName: prev.username,
+    }));
+  };
+
   const saveUser = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (form.affiliation.length === 0) {
+      setStatusMessage("所属を1つ以上選択してください。");
+      return;
+    }
 
     if (selectedId === null) {
       const next: UserManagementItem = {
@@ -247,6 +320,22 @@ export function AdminUserManagementPageView() {
       resetForm();
     }
     setStatusMessage("ユーザを削除しました。");
+  };
+
+  const toggleAffiliation = (value: string) => {
+    setForm((prev) => {
+      if (prev.affiliation.includes(value)) {
+        return {
+          ...prev,
+          affiliation: prev.affiliation.filter((item) => item !== value),
+        };
+      }
+
+      return {
+        ...prev,
+        affiliation: [...prev.affiliation, value],
+      };
+    });
   };
 
   return (
@@ -301,7 +390,7 @@ export function AdminUserManagementPageView() {
                       <tr key={user.id}>
                         <td>{user.username}</td>
                         <td>{user.fullName}</td>
-                        <td>{user.affiliation}</td>
+                        <td>{formatAffiliation(user.affiliation)}</td>
                         <td>{user.role}</td>
                         <td>
                           <span className={`${styles.statusBadge} ${user.status === "active" ? styles.badgePublished : styles.badgeDraft}`}>
@@ -349,6 +438,7 @@ export function AdminUserManagementPageView() {
                     required
                     value={form.username}
                     onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))}
+                    onBlur={handleUsernameBlur}
                   />
                 </label>
 
@@ -359,19 +449,56 @@ export function AdminUserManagementPageView() {
                     type="text"
                     required
                     value={form.fullName}
-                    onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
+                      setIsFullNameCustomized(nextValue.trim().length > 0);
+                      setForm((prev) => ({ ...prev, fullName: nextValue }));
+                    }}
                   />
                 </label>
 
                 <label className={styles.field}>
                   <span className={styles.label}>所属</span>
-                  <input
-                    className={styles.input}
-                    type="text"
-                    required
-                    value={form.affiliation}
-                    onChange={(event) => setForm((prev) => ({ ...prev, affiliation: event.target.value }))}
-                  />
+                  <div className={styles.affiliationPicker}>
+                    {AFFILIATION_OPTION_GROUPS.map((group) => (
+                      <fieldset key={group.key} className={styles.affiliationGroup}>
+                        <legend className={styles.affiliationGroupTitle}>{group.title}</legend>
+                        <div className={styles.affiliationOptions}>
+                          {group.options.map((option) => {
+                            const isChecked = form.affiliation.includes(option.value);
+                            return (
+                              <label
+                                key={option.value}
+                                className={`${styles.affiliationOption} ${isChecked ? styles.affiliationOptionActive : ""}`}
+                              >
+                                <input
+                                  className={styles.affiliationCheckbox}
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleAffiliation(option.value)}
+                                />
+                                <span>{option.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </fieldset>
+                    ))}
+                  </div>
+                  <div className={styles.selectedAffiliationWrap}>
+                    <span className={styles.selectedAffiliationTitle}>選択中の所属</span>
+                    {form.affiliation.length > 0 ? (
+                      <div className={styles.selectedAffiliationList}>
+                        {form.affiliation.map((value) => (
+                          <span key={value} className={styles.selectedAffiliationItem}>
+                            {getAffiliationLabel(value)}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={styles.helpText}>所属を選択してください。</p>
+                    )}
+                  </div>
                 </label>
 
                 <label className={styles.field}>

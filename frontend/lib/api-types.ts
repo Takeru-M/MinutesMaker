@@ -10,11 +10,29 @@ export type AuthRole =
 export type LoginRequest = {
   username: string;
   password: string;
+  organization_id?: number | null;
+};
+
+export type OrganizationResponse = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
+export type MembershipResponse = {
+  organization: OrganizationResponse;
+  role: AuthRole;
+  is_primary: boolean;
 };
 
 export type LoginResponse = {
   message: string;
   role: AuthRole;
+  active_organization_id?: number | null;
+};
+
+export type LoginOptionsResponse = {
+  memberships: MembershipResponse[];
 };
 
 export type RefreshResponse = {
@@ -25,6 +43,8 @@ export type CurrentUserResponse = {
   id: number;
   username: string;
   role: AuthRole;
+  active_organization_id?: number | null;
+  memberships: MembershipResponse[];
 };
 
 export type AgendaMeetingType = "large" | "block" | "annual";
@@ -89,11 +109,27 @@ export type AgendaDetailResponse = {
   deleted_at: string | null;
   related_past_agenda_ids: number[];
   related_other_agenda_ids: number[];
+  attachments: AgendaAttachmentResponse[];
 };
 
 export type AgendaPdfUploadResponse = {
   s3_key: string;
   url: string;
+};
+
+export type AgendaAttachmentResponse = {
+  id: number;
+  file_name: string;
+  s3_key: string;
+  download_url: string;
+  file_size: number;
+  mime_type: string;
+  order_no: number;
+  created_at: string;
+};
+
+export type AgendaAttachmentUploadResponse = {
+  attachment: AgendaAttachmentResponse;
 };
 
 export type MeetingListItemResponse = {
@@ -144,6 +180,18 @@ export type NoticeDetailResponse = {
   category: "important" | "info" | "warning";
   created_by_name: string;
   published_at: string | null;
+  attachments: NoticeAttachmentResponse[];
+};
+
+export type NoticeAttachmentResponse = {
+  id: number;
+  file_name: string;
+  s3_key: string;
+  download_url: string;
+  file_size: number;
+  mime_type: string;
+  order_no: number;
+  created_at: string;
 };
 
 export type NoticeStatus = "draft" | "published" | "archived";
@@ -163,6 +211,7 @@ export type NoticeAdminListItemResponse = {
 export type NoticeAdminDetailResponse = NoticeAdminListItemResponse & {
   created_by_name: string;
   updated_by_name: string | null;
+  attachments: NoticeAttachmentResponse[];
 };
 
 export type NoticeCreateRequest = {
@@ -223,6 +272,7 @@ export type ContentAttachmentResponse = {
   id: number;
   file_name: string;
   s3_key: string;
+  download_url: string;
   file_size: number;
   mime_type: string;
   order_no: number;

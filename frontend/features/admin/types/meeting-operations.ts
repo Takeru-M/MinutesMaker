@@ -25,13 +25,19 @@ export type MeetingOperationAgendaFormValues = {
   content: string;
   status: string;
   priority: string;
-  agendaTypes: string;
+  agendaTypes: string[];
   votingItems: string;
-  pdfS3Key: string;
-  pdfUrl: string;
-  relatedPastAgendaIds: string;
-  relatedOtherAgendaIds: string;
+  relatedPastAgendaIds: number[];
+  relatedOtherAgendaIds: number[];
 };
+
+export const AGENDA_TYPE_OPTIONS = [
+  { value: "announcement", label: "告知" },
+  { value: "discussion", label: "議論" },
+  { value: "voting", label: "採決" },
+  { value: "recruitment", label: "募集" },
+  { value: "voting-planned", label: "採決予定" },
+] as const;
 
 export const MEETING_TYPE_OPTIONS: Array<{
   value: MeetingOperationMeetingType;
@@ -84,29 +90,11 @@ export const EMPTY_AGENDA_FORM: MeetingOperationAgendaFormValues = {
   content: "",
   status: "draft",
   priority: "3",
-  agendaTypes: "",
+  agendaTypes: [],
   votingItems: "",
-  pdfS3Key: "",
-  pdfUrl: "",
-  relatedPastAgendaIds: "",
-  relatedOtherAgendaIds: "",
+  relatedPastAgendaIds: [],
+  relatedOtherAgendaIds: [],
 };
-
-export function parseNumberList(value: string): number[] {
-  return value
-    .split(/[,\n]/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => Number.parseInt(item, 10))
-    .filter((item) => Number.isFinite(item));
-}
-
-export function parseStringList(value: string): string[] {
-  return value
-    .split(/[,\n]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 export function formatDateTimeLocal(value: string | null | undefined): string {
   if (!value) {

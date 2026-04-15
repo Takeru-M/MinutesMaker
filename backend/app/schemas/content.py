@@ -25,10 +25,15 @@ class ContentAttachmentResponse(BaseModel):
     id: int
     file_name: str
     s3_key: str
+    download_url: str
     file_size: int
     mime_type: str
     order_no: int
     created_at: datetime
+
+
+class ContentAttachmentUploadResponse(BaseModel):
+    attachment: ContentAttachmentResponse
 
 
 class ContentDetailResponse(BaseModel):

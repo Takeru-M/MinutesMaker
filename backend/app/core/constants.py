@@ -76,6 +76,8 @@ ROLE_DEFINITIONS = (
 PERMISSION_DEFINITIONS = (
     ("meeting.read_list", "meeting", "read_list", "Read meeting schedule list"),
     ("meeting.read_detail", "meeting", "read_detail", "Read meeting detail"),
+    ("meeting.qa.ask", "meeting", "qa_ask", "Ask meeting QA"),
+    ("meeting.qa.ingest", "meeting", "qa_ingest", "Ingest meeting QA sources"),
     ("meeting.create", "meeting", "create", "Create meetings"),
     ("meeting.update", "meeting", "update", "Update meetings"),
     ("meeting.delete", "meeting", "delete", "Delete meetings"),
@@ -118,6 +120,8 @@ ORG_ADMIN_PERMISSION_NAMES = frozenset(
     {
         "meeting.read_list",
         "meeting.read_detail",
+        "meeting.qa.ask",
+        "meeting.qa.ingest",
         "meeting.create",
         "meeting.update",
         "agenda.read",
@@ -148,6 +152,8 @@ ORG_USER_PERMISSION_NAMES = frozenset(
     {
         "meeting.read_list",
         "meeting.read_detail",
+        "meeting.qa.ask",
+        "meeting.qa.ingest",
         "agenda.read",
         "agenda.create",
         "minutes.read",
@@ -163,6 +169,7 @@ AUDITOR_PERMISSION_NAMES = frozenset(
     {
         "meeting.read_list",
         "meeting.read_detail",
+        "meeting.qa.ask",
         "agenda.read",
         "minutes.read",
         "notice.read",

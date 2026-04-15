@@ -25,7 +25,6 @@ export function AdminGuidePageView() {
       loadingLabel={t("adminContentManagementCommon.loading")}
       fetchFailedLabel={t("adminContentManagementCommon.fetchFailed")}
       noResultsLabel={t("adminContentManagementCommon.noResults")}
-      newButtonLabel={t("adminContentManagementCommon.newButton")}
       editButtonLabel={t("adminContentManagementCommon.editButton")}
       deleteButtonLabel={t("adminContentManagementCommon.deleteButton")}
       saveButtonCreateLabel={t("adminContentManagementCommon.saveButtonCreate")}

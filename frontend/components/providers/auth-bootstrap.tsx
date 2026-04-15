@@ -25,7 +25,14 @@ export function AuthBootstrap({ children }: AuthBootstrapProps) {
         }
 
         if (currentUser) {
-          dispatch(loginSucceeded({ role: currentUser.role, username: currentUser.username }));
+          dispatch(
+            loginSucceeded({
+              role: currentUser.role,
+              username: currentUser.username,
+              memberships: currentUser.memberships,
+              activeOrganizationId: currentUser.active_organization_id ?? null,
+            }),
+          );
         } else {
           dispatch(logoutSucceeded());
         }

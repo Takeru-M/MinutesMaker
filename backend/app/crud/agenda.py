@@ -10,7 +10,7 @@ from app.core.constants import (
     RELATION_TYPE_OTHER_REFERENCE,
     RELATION_TYPE_PAST_BLOCK,
 )
-from app.models.agenda import Agenda
+from app.models.agenda import Agenda, AgendaAttachment
 from app.models.agenda_relation import AgendaRelation
 from app.models.meeting import Meeting
 from app.schemas.agenda import AgendaCreateRequest, AgendaUpdateRequest
@@ -61,6 +61,35 @@ def get_related_agenda_ids(db: Session, *, agenda_id: int, relation_type: str) -
         .order_by(AgendaRelation.target_agenda_id.asc())
     )
     return [row for row in db.exec(stmt).all()]
+
+
+def get_agenda_attachments(db: Session, agenda_id: int) -> list[AgendaAttachment]:
+    return db.exec(
+        select(AgendaAttachment)
+        .where(AgendaAttachment.agenda_id == agenda_id)
+        .order_by(AgendaAttachment.order_no)
+    ).all()
+
+
+def count_agenda_attachments(db: Session, agenda_id: int) -> int:
+    return len(get_agenda_attachments(db, agenda_id))
+
+
+def create_agenda_attachment(db: Session, attachment: AgendaAttachment) -> AgendaAttachment:
+    db.add(attachment)
+    db.flush()
+    return attachment
+
+
+def get_agenda_attachment_by_id(db: Session, attachment_id: int) -> AgendaAttachment | None:
+    return db.exec(select(AgendaAttachment).where(AgendaAttachment.id == attachment_id)).first()
+
+
+def delete_agenda_attachment(db: Session, attachment_id: int) -> None:
+    attachment = get_agenda_attachment_by_id(db, attachment_id)
+    if attachment:
+        db.delete(attachment)
+        db.flush()
 
 
 def create_agenda(db: Session, *, payload: AgendaCreateRequest, user_id: int) -> Agenda:

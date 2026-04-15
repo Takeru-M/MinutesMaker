@@ -101,6 +101,7 @@ export const enMessages: TranslationNode = {
   },
   adminFeatureCommon: {
     featureList: "Administrator Feature List",
+      home: "Home",
     restrictedNotice: "This page is available only for administrator roles.",
     operationExamples: "Main operations",
   },

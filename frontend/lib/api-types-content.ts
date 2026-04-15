@@ -3,6 +3,7 @@ export type ContentAttachmentResponse = {
   id: number;
   file_name: string;
   s3_key: string;
+  download_url: string;
   file_size: number;
   mime_type: string;
   order_no: number;

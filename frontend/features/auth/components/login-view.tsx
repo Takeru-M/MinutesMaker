@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 
 import { useI18n } from "@/features/i18n";
 import type { AuthRole, LoginResponse } from "@/lib/api-types";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, getCurrentUser } from "@/lib/api-client";
 import { useAppDispatch } from "@/store/hooks";
 import { loginSucceeded } from "@/store/slices/auth-slice";
 import styles from "./login-view.module.css";
@@ -17,7 +17,6 @@ export function LoginView() {
   const { locale, setLocale, t } = useI18n();
   const redirectTarget = searchParams.get("redirect");
   const agendaSubmitNotice = searchParams.get("notice") === "agenda-submit";
-  const postLoginRedirect = redirectTarget ?? (agendaSubmitNotice ? "/agenda/submit" : "/");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,6 +31,25 @@ export function LoginView() {
       },
       body: JSON.stringify({ username, password }),
     });
+  };
+
+  /**
+   * Determine post-login redirect URL based on active organization
+   */
+  const getPostLoginRedirect = (activeOrgId: number | null): string => {
+    if (redirectTarget) {
+      return redirectTarget;
+    }
+
+    if (agendaSubmitNotice) {
+      return activeOrgId ? `/orgs/${activeOrgId}/agenda/submit` : "/agenda/submit";
+    }
+
+    if (activeOrgId) {
+      return `/orgs/${activeOrgId}`;
+    }
+
+    return "/";
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -54,13 +72,21 @@ export function LoginView() {
         return;
       }
 
-      const data = (await response.json()) as LoginResponse;
-      setSuccessMessage(t("login.success", { role: data.role }));
-      dispatch(loginSucceeded({ role: data.role, username }));
+      const loginData = (await response.json()) as LoginResponse;
+      const currentUser = await getCurrentUser();
+      setSuccessMessage(t("login.success", { role: loginData.role }));
 
-      setTimeout(() => {
-        router.push(postLoginRedirect);
-      }, 1000);
+      dispatch(
+        loginSucceeded({
+          role: loginData.role,
+          username,
+          memberships: currentUser?.memberships ?? [],
+          activeOrganizationId: loginData.active_organization_id ?? null,
+        }),
+      );
+
+      const redirectUrl = getPostLoginRedirect(loginData.active_organization_id ?? null);
+      router.replace(redirectUrl);
     } catch {
       setErrorMessage(t("login.errors.connection"));
     } finally {

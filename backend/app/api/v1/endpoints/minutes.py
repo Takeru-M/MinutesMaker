@@ -3,8 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlmodel import Session
 
-from app.core.auth_dependencies import require_roles
-from app.core.constants import ROLE_ADMIN, ROLE_AUDITOR, ROLE_ORG_ADMIN, ROLE_USER
+from app.core.auth_dependencies import require_permissions
 from app.crud.agenda import get_agenda_by_id
 from app.crud.meeting import get_meeting_by_id
 from app.crud.minutes import (
@@ -75,7 +74,7 @@ def create_minute_for_agenda(
     agenda_id: int,
     payload: MinutesCreateRequest,
     db: Session = Depends(get_session),
-    current_user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    current_user=Depends(require_permissions("minutes.create")),
 ) -> MinutesResponse:
     """Create a new minute for a specific agenda."""
     # Verify agenda exists
@@ -119,7 +118,7 @@ def list_minutes_for_agenda(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_session),
-    _user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN, ROLE_AUDITOR)),
+    _user=Depends(require_permissions("minutes.read")),
 ) -> MinutesListResponse:
     """List all minutes for a specific agenda."""
     # Verify agenda exists
@@ -144,7 +143,7 @@ def create_minute_for_meeting(
     meeting_id: int,
     payload: MinutesCreateRequest,
     db: Session = Depends(get_session),
-    current_user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    current_user=Depends(require_permissions("minutes.create")),
 ) -> MinutesResponse:
     """Create a new minute for a specific meeting."""
     meeting = get_meeting_by_id(db, meeting_id)
@@ -182,7 +181,7 @@ def list_minutes_for_meeting(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_session),
-    _user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN, ROLE_AUDITOR)),
+    _user=Depends(require_permissions("minutes.read")),
 ) -> MinutesListResponse:
     """List all minutes for a specific meeting."""
     meeting = get_meeting_by_id(db, meeting_id)
@@ -205,7 +204,7 @@ def list_minutes_for_meeting(
 def get_minute(
     minute_id: int,
     db: Session = Depends(get_session),
-    _user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN, ROLE_AUDITOR)),
+    _user=Depends(require_permissions("minutes.read")),
 ) -> MinutesResponse:
     """Get a specific minute by ID."""
     minute = get_minute_by_id(db, minute_id)
@@ -223,7 +222,7 @@ def update_minute_endpoint(
     minute_id: int,
     payload: MinutesCreateRequest,
     db: Session = Depends(get_session),
-    current_user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    current_user=Depends(require_permissions("minutes.update")),
 ) -> MinutesResponse:
     """Update a specific minute by ID."""
     minute = get_minute_by_id(db, minute_id)
@@ -258,7 +257,7 @@ def update_minute_endpoint(
 def delete_minute_endpoint(
     minute_id: int,
     db: Session = Depends(get_session),
-    current_user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    current_user=Depends(require_permissions("minutes.update")),
 ) -> None:
     """Delete a minute (soft delete)."""
     minute = get_minute_by_id(db, minute_id)
@@ -283,7 +282,7 @@ def delete_minute_endpoint(
 @router.post("/upload-pdf", response_model=MinutesPdfUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_minutes_pdf_file(
     file: UploadFile = File(...),
-    _user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    _user=Depends(require_permissions("minutes.create")),
 ) -> MinutesPdfUploadResponse:
     filename = file.filename or "minutes.pdf"
     if not filename.lower().endswith(".pdf"):

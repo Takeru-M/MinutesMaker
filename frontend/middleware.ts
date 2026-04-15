@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/admin", "/api/health", "/api/pdf-proxy"];
-const PUBLIC_EXACT_PATHS = ["/meeting-schedule"];
+const PUBLIC_PATHS = ["/login", "/api/health", "/api/pdf-proxy"];
+const PUBLIC_EXACT_PATHS = ["/meeting-schedule", "/admin"];
 const STATIC_FILE_PATTERN = /\.(?:png|jpg|jpeg|gif|svg|ico|css|js|map|txt|webmanifest)$/;
 
 function isPublicPath(pathname: string): boolean {

@@ -1,4 +1,4 @@
-from app.models.agenda import Agenda
+from app.models.agenda import Agenda, AgendaAttachment
 from app.models.agenda_relation import AgendaRelation
 from app.models.audit_log import AuditLog
 from app.models.content import Content, ContentAttachment
@@ -9,7 +9,8 @@ from app.models.meeting_knowledge import (
     MeetingQALog,
 )
 from app.models.minutes import MinuteRevision, Minutes
-from app.models.notice import Notice
+from app.models.notice import Notice, NoticeAttachment
+from app.models.organization import Organization, OrganizationMembership
 from app.models.role import Permission, Role, RolePermission, UserRole
 from app.models.user import User
 
@@ -25,10 +26,14 @@ __all__ = [
     "MeetingKnowledgeChunk",
     "MeetingQALog",
     "Agenda",
+    "AgendaAttachment",
     "AgendaRelation",
     "Minutes",
     "MinuteRevision",
     "Notice",
+    "NoticeAttachment",
+    "Organization",
+    "OrganizationMembership",
     "AuditLog",
     "Content",
     "ContentAttachment",

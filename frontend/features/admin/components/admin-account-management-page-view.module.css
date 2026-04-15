@@ -13,6 +13,27 @@
   display: grid;
   gap: 18px;
 }
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+
+.breadcrumbLink {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.breadcrumbLink:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.breadcrumbCurrent {
+  color: #64748b;
+}
 
 .grid {
   display: grid;
@@ -161,6 +182,83 @@
   font: inherit;
   color: #0f172a;
   background: #ffffff;
+}
+
+.affiliationPicker {
+  display: grid;
+  gap: 10px;
+}
+
+.affiliationGroup {
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px;
+  margin: 0;
+}
+
+.affiliationGroupTitle {
+  padding: 0 6px;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.affiliationOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.affiliationOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  cursor: pointer;
+  color: #0f172a;
+}
+
+.affiliationOptionActive {
+  border-color: #0f766e;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.affiliationCheckbox {
+  width: 14px;
+  height: 14px;
+  accent-color: #0f766e;
+}
+
+.selectedAffiliationWrap {
+  display: grid;
+  gap: 6px;
+}
+
+.selectedAffiliationTitle {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.selectedAffiliationList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selectedAffiliationItem {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #e0f2fe;
+  color: #0c4a6e;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .helpText {

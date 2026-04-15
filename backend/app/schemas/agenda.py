@@ -90,6 +90,7 @@ class AgendaReadResponse(BaseModel):
     deleted_at: Optional[datetime]
     related_past_agenda_ids: list[int] = Field(default_factory=list)
     related_other_agenda_ids: list[int] = Field(default_factory=list)
+    attachments: list["AgendaAttachmentResponse"] = Field(default_factory=list)
 
 
 class AgendaListItemResponse(BaseModel):
@@ -108,6 +109,21 @@ class AgendaSearchItemResponse(BaseModel):
     meeting_title: str
     meeting_type: str
     meeting_scheduled_at: datetime
+
+
+class AgendaAttachmentResponse(BaseModel):
+    id: int
+    file_name: str
+    s3_key: str
+    download_url: str
+    file_size: int
+    mime_type: str
+    order_no: int
+    created_at: datetime
+
+
+class AgendaAttachmentUploadResponse(BaseModel):
+    attachment: AgendaAttachmentResponse
 
 
 class AgendaPdfUploadResponse(BaseModel):

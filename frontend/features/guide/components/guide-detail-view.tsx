@@ -168,7 +168,7 @@ export function GuideDetailView({ contentId }: GuideDetailViewProps) {
                       <li key={attachment.id} className={styles.attachmentItem}>
                         <span>{`${attachment.file_name} (${formatFileSize(attachment.file_size)})`}</span>
                         <a
-                          href={`https://${attachment.s3_key}`}
+                          href={attachment.download_url || "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={styles.downloadLink}

@@ -79,5 +79,11 @@ class Settings:
     rag_retrieval_top_k: int = int(os.getenv("RAG_RETRIEVAL_TOP_K", "6"))
     rag_score_threshold: float = float(os.getenv("RAG_SCORE_THRESHOLD", "0.2"))
 
+    pdf_max_upload_bytes: int = int(os.getenv("PDF_MAX_UPLOAD_BYTES", str(15 * 1024 * 1024)))
+    notice_attachment_max_count: int = int(os.getenv("NOTICE_ATTACHMENT_MAX_COUNT", "3"))
+    guide_attachment_max_count: int = int(os.getenv("GUIDE_ATTACHMENT_MAX_COUNT", "3"))
+    repository_attachment_max_count: int = int(os.getenv("REPOSITORY_ATTACHMENT_MAX_COUNT", "5"))
+    agenda_attachment_max_count: int = int(os.getenv("AGENDA_ATTACHMENT_MAX_COUNT", "3"))
+
 
 settings = Settings()

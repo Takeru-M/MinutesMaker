@@ -51,30 +51,27 @@ def build_signed_s3_url(*, s3_key: str, expires_in: int | None = None) -> str:
 
 
 def upload_agenda_pdf(*, file_bytes: bytes, filename: str, content_type: str = "application/pdf") -> UploadedFile:
-    bucket = settings.aws_s3_bucket.strip()
-    if not bucket:
-        raise ValueError("AWS_S3_BUCKET is not configured")
-
-    key = _build_pdf_key(filename, prefix="agendas")
-    client = _create_s3_client()
-    try:
-        client.put_object(
-            Bucket=bucket,
-            Key=key,
-            Body=file_bytes,
-            ContentType=content_type,
-        )
-    except ClientError as exc:
-        raise ValueError(_format_s3_upload_error(exc=exc, bucket=bucket, key=key)) from exc
-    return UploadedFile(s3_key=key, url=_build_public_url(bucket=bucket, key=key))
+    return upload_pdf(file_bytes=file_bytes, filename=filename, prefix="agendas", content_type=content_type)
 
 
 def upload_minutes_pdf(*, file_bytes: bytes, filename: str, content_type: str = "application/pdf") -> UploadedFile:
+    return upload_pdf(file_bytes=file_bytes, filename=filename, prefix="minutes", content_type=content_type)
+
+
+def upload_notice_pdf(*, file_bytes: bytes, filename: str, content_type: str = "application/pdf") -> UploadedFile:
+    return upload_pdf(file_bytes=file_bytes, filename=filename, prefix="notices", content_type=content_type)
+
+
+def upload_content_pdf(*, file_bytes: bytes, filename: str, prefix: str, content_type: str = "application/pdf") -> UploadedFile:
+    return upload_pdf(file_bytes=file_bytes, filename=filename, prefix=prefix, content_type=content_type)
+
+
+def upload_pdf(*, file_bytes: bytes, filename: str, prefix: str, content_type: str = "application/pdf") -> UploadedFile:
     bucket = settings.aws_s3_bucket.strip()
     if not bucket:
         raise ValueError("AWS_S3_BUCKET is not configured")
 
-    key = _build_pdf_key(filename, prefix="minutes")
+    key = _build_pdf_key(filename, prefix=prefix)
     client = _create_s3_client()
     try:
         client.put_object(

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { Footer, Header, PageHero } from "@/components/layout";
@@ -39,7 +39,6 @@ type AdminContentManagementPageViewProps = {
   loadingLabel: string;
   fetchFailedLabel: string;
   noResultsLabel: string;
-  newButtonLabel: string;
   editButtonLabel: string;
   deleteButtonLabel: string;
   saveButtonCreateLabel: string;
@@ -142,7 +141,6 @@ export function AdminContentManagementPageView({
   loadingLabel,
   fetchFailedLabel,
   noResultsLabel,
-  newButtonLabel,
   editButtonLabel,
   deleteButtonLabel,
   saveButtonCreateLabel,
@@ -172,8 +170,13 @@ export function AdminContentManagementPageView({
   const [form, setForm] = useState<ContentFormState>(EMPTY_FORM);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+
+  const maxAttachments = contentType === "repository" ? 5 : 3;
+  const maxAttachmentSizeLabel = "15MB";
 
   useEffect(() => {
     if (!auth.isAuthenticated) {
@@ -232,6 +235,12 @@ export function AdminContentManagementPageView({
     setSelectedContentId(null);
     setSelectedDetail(null);
     setForm(EMPTY_FORM);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
   };
 
   const openEditor = async (item: ContentItemResponse) => {
@@ -300,6 +309,93 @@ export function AdminContentManagementPageView({
     }
   };
 
+  const uploadAttachment = async () => {
+    if (selectedContentId === null) {
+      setErrorMessage("先にコンテンツを作成または選択してください。");
+      return;
+    }
+
+    const file = attachmentInputRef.current?.files?.[0] ?? null;
+    if (!file) {
+      setErrorMessage("PDFファイルを選択してください。");
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setErrorMessage("PDFファイル（.pdf）のみアップロードできます。");
+      return;
+    }
+
+    setIsAttachmentUploading(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const payload = new FormData();
+      payload.set("file", file);
+
+      const response = await apiFetch(`/api/v1/${contentType}/admin/${selectedContentId}/attachments/upload-pdf`, {
+        method: "POST",
+        body: payload,
+      });
+
+      if (!response.ok) {
+        setErrorMessage(await readErrorMessage(response, "添付ファイルのアップロードに失敗しました。"));
+        return;
+      }
+
+      const data = (await response.json()) as { attachment: ContentAdminDetailResponse["attachments"][number] };
+      setSelectedDetail((current) => {
+        if (!current) {
+          return current;
+        }
+        return { ...current, attachments: [...current.attachments, data.attachment] };
+      });
+      setStatusMessage("添付ファイルをアップロードしました。");
+      if (attachmentInputRef.current) {
+        attachmentInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error(`Failed to upload ${contentType} attachment:`, error);
+      setErrorMessage("添付ファイルのアップロードに失敗しました。");
+    } finally {
+      setIsAttachmentUploading(false);
+    }
+  };
+
+  const deleteAttachment = async (attachmentId: number) => {
+    if (!selectedContentId) {
+      return;
+    }
+    if (!window.confirm("この添付ファイルを削除しますか？")) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const response = await apiFetch(`/api/v1/${contentType}/admin/${selectedContentId}/attachments/${attachmentId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok && response.status !== 204) {
+        setErrorMessage(await readErrorMessage(response, "添付ファイルの削除に失敗しました。"));
+        return;
+      }
+
+      setSelectedDetail((current) => {
+        if (!current) {
+          return current;
+        }
+        return { ...current, attachments: current.attachments.filter((item) => item.id !== attachmentId) };
+      });
+      setStatusMessage("添付ファイルを削除しました。");
+    } catch (error) {
+      console.error(`Failed to delete ${contentType} attachment:`, error);
+      setErrorMessage("添付ファイルの削除に失敗しました。");
+    }
+  };
+
   const deleteContent = async (itemId: number) => {
     if (!window.confirm(deleteConfirmLabel)) {
       return;
@@ -348,16 +444,7 @@ export function AdminContentManagementPageView({
             <span className={styles.breadcrumbCurrent}>/ {title}</span>
           </div>
 
-          <PageHero badge={badge} title={title} description={description}>
-            <div className={styles.heroActions}>
-              <Link href="/admin/features" className={styles.secondaryButton}>
-                管理者機能一覧へ
-              </Link>
-              <button type="button" className={styles.primaryButton} onClick={resetForm}>
-                {newButtonLabel}
-              </button>
-            </div>
-          </PageHero>
+          <PageHero badge={badge} title={title} description={description} />
 
           {statusMessage ? <p className={styles.message}>{statusMessage}</p> : null}
           {errorMessage ? <p className={`${styles.message} ${styles.errorMessage}`}>{errorMessage}</p> : null}
@@ -501,6 +588,44 @@ export function AdminContentManagementPageView({
                   </label>
 
                   <p className={`${styles.helpText} ${styles.fieldWide}`}>{contentHelpLabel}</p>
+
+                  <div className={`${styles.attachmentBlock} ${styles.fieldWide}`}>
+                    <p className={styles.label}>PDF添付</p>
+                    <p className={styles.helpText}>{`最大${maxAttachments}件 / 1ファイル最大${maxAttachmentSizeLabel} / PDFのみ`}</p>
+                    <div className={styles.attachmentUploadRow}>
+                      <input ref={attachmentInputRef} type="file" name="attachmentFile" accept=".pdf,application/pdf" className={styles.input} />
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        disabled={selectedContentId === null || isAttachmentUploading}
+                        onClick={() => void uploadAttachment()}
+                      >
+                        {isAttachmentUploading ? "アップロード中..." : "PDFをアップロード"}
+                      </button>
+                    </div>
+
+                    {selectedDetail && selectedDetail.attachments.length > 0 ? (
+                      <ul className={styles.attachmentList}>
+                        {selectedDetail.attachments.map((attachment) => (
+                          <li key={attachment.id} className={styles.attachmentItem}>
+                            <a href={attachment.download_url || "#"} target="_blank" rel="noopener noreferrer">
+                              {attachment.file_name}
+                            </a>
+                            <span>{formatFileSize(attachment.file_size)}</span>
+                            <button
+                              type="button"
+                              className={styles.dangerButton}
+                              onClick={() => void deleteAttachment(attachment.id)}
+                            >
+                              添付を削除
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className={styles.helpText}>添付ファイルはありません。</p>
+                    )}
+                  </div>
 
                   <div className={`${styles.formActions} ${styles.fieldWide}`}>
                     <button type="submit" className={styles.primaryButton} disabled={isSubmitting}>

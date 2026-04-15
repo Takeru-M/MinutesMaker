@@ -3,8 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session
 
-from app.core.auth_dependencies import require_roles
-from app.core.constants import ROLE_ADMIN, ROLE_AUDITOR, ROLE_ORG_ADMIN, ROLE_USER
+from app.core.auth_dependencies import require_permissions
 from app.crud.meeting import (
     create_meeting,
     delete_meeting,
@@ -60,7 +59,7 @@ def read_meetings(
 def read_meeting_detail(
     meeting_id: int,
     db: Session = Depends(get_session),
-    current_user=Depends(require_roles(ROLE_USER, ROLE_ORG_ADMIN, ROLE_ADMIN, ROLE_AUDITOR)),
+    current_user=Depends(require_permissions("meeting.read_detail")),
 ) -> MeetingDetailResponse:
     meeting = get_meeting_by_id(db, meeting_id)
     if meeting is None:
@@ -104,7 +103,7 @@ def read_meeting_detail(
 def post_meeting(
     payload: MeetingCreateRequest,
     db: Session = Depends(get_session),
-    current_user=Depends(require_roles(ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    current_user=Depends(require_permissions("meeting.create")),
 ) -> MeetingDetailResponse:
     meeting = create_meeting(db, payload=payload, user_id=current_user.id or 0)
     return MeetingDetailResponse(
@@ -125,7 +124,7 @@ def put_meeting(
     meeting_id: int,
     payload: MeetingUpdateRequest,
     db: Session = Depends(get_session),
-    _user=Depends(require_roles(ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    _user=Depends(require_permissions("meeting.update")),
 ) -> MeetingDetailResponse:
     meeting = update_meeting(db, meeting_id=meeting_id, payload=payload)
     if meeting is None:
@@ -161,7 +160,7 @@ def put_meeting(
 def remove_meeting(
     meeting_id: int,
     db: Session = Depends(get_session),
-    _user=Depends(require_roles(ROLE_ORG_ADMIN, ROLE_ADMIN)),
+    _user=Depends(require_permissions("meeting.delete")),
 ) -> None:
     try:
         deleted = delete_meeting(db, meeting_id=meeting_id)

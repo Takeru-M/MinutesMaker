@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { Footer, Header, PageHero } from "@/components/layout";
 import { Container } from "@/components/ui/container";
 import { apiFetch } from "@/lib/api-client";
+import Link from "next/link";
 import type {
   NoticeAdminDetailResponse,
   NoticeAdminListItemResponse,
@@ -165,13 +165,14 @@ function AdminNoticeShell({
       <Header />
       <Container>
         <main className={styles.main}>
-          <PageHero badge={badge} title={title} description={description}>
-            <div className={styles.buttonRow}>
-              <Link href="/admin/features" className={styles.secondaryButton}>
-                管理者機能一覧へ
-              </Link>
-            </div>
-          </PageHero>
+                    <div className={styles.breadcrumb}>
+                      <Link href="/admin/features" className={styles.breadcrumbLink}>
+                        管理者機能一覧
+                      </Link>
+                      <span className={styles.breadcrumbCurrent}>/ {title}</span>
+                    </div>
+
+          <PageHero badge={badge} title={title} description={description} />
 
           {children}
         </main>
@@ -188,8 +189,11 @@ export function AdminNoticeCreatePublishPageView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedAttachments, setSelectedAttachments] = useState<NoticeAdminDetailResponse["attachments"]>([]);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   const mode = useMemo(() => (selectedId === null ? "create" : "edit"), [selectedId]);
   const filteredNotices = useMemo(() => {
@@ -234,11 +238,24 @@ export function AdminNoticeCreatePublishPageView() {
   const resetForm = () => {
     setSelectedId(null);
     setForm(EMPTY_FORM);
+    setSelectedAttachments([]);
   };
 
   const editNotice = (notice: NoticeAdminListItemResponse) => {
     setSelectedId(notice.id);
     setForm(toFormState(notice));
+    void (async () => {
+      try {
+        const response = await apiFetch(`/api/v1/notices/admin/${notice.id}`);
+        if (!response.ok) {
+          return;
+        }
+        const detail = (await response.json()) as NoticeAdminDetailResponse;
+        setSelectedAttachments(detail.attachments);
+      } catch {
+        setSelectedAttachments([]);
+      }
+    })();
   };
 
   const saveNotice = async (event: FormEvent<HTMLFormElement>) => {
@@ -280,6 +297,7 @@ export function AdminNoticeCreatePublishPageView() {
         next.unshift(saved);
         return next;
       });
+      setSelectedAttachments(saved.attachments ?? []);
       resetForm();
     } catch (error) {
       console.error("Failed to save notice:", error);
@@ -306,8 +324,89 @@ export function AdminNoticeCreatePublishPageView() {
     setNotices((prev) => prev.filter((notice) => notice.id !== noticeId));
     if (selectedId === noticeId) {
       resetForm();
+      setSelectedAttachments([]);
     }
     setStatusMessage("お知らせを削除しました。");
+  };
+
+  const uploadAttachment = async () => {
+    if (selectedId === null) {
+      setErrorMessage("先にお知らせを作成または選択してください。");
+      return;
+    }
+
+    const file = attachmentInputRef.current?.files?.[0] ?? null;
+    if (!file) {
+      setErrorMessage("PDFファイルを選択してください。");
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setErrorMessage("PDFファイル（.pdf）のみアップロードできます。");
+      return;
+    }
+
+    setIsAttachmentUploading(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+
+      const response = await apiFetch(`/api/v1/notices/admin/${selectedId}/attachments/upload-pdf`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        setErrorMessage(await readErrorMessage(response, "添付ファイルのアップロードに失敗しました。"));
+        return;
+      }
+
+      const data = (await response.json()) as { attachment: NoticeAdminDetailResponse["attachments"][number] };
+      setSelectedAttachments((prev) => [...prev, data.attachment]);
+      setStatusMessage("添付ファイルをアップロードしました。");
+      if (attachmentInputRef.current) {
+        attachmentInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("Failed to upload notice attachment:", error);
+      setErrorMessage("添付ファイルのアップロードに失敗しました。");
+    } finally {
+      setIsAttachmentUploading(false);
+    }
+  };
+
+  const deleteAttachment = async (attachmentId: number) => {
+    if (selectedId === null) {
+      return;
+    }
+    if (!window.confirm("この添付ファイルを削除しますか？")) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setStatusMessage(null);
+    try {
+      const response = await apiFetch(`/api/v1/notices/admin/${selectedId}/attachments/${attachmentId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok && response.status !== 204) {
+        setErrorMessage(await readErrorMessage(response, "添付ファイルの削除に失敗しました。"));
+        return;
+      }
+
+      setSelectedAttachments((prev) => prev.filter((item) => item.id !== attachmentId));
+      setStatusMessage("添付ファイルを削除しました。");
+    } catch (error) {
+      console.error("Failed to delete notice attachment:", error);
+      setErrorMessage("添付ファイルの削除に失敗しました。");
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
   };
 
   const totalCount = filteredNotices.length;
@@ -492,6 +591,45 @@ export function AdminNoticeCreatePublishPageView() {
                     required
                   />
                 </label>
+              </div>
+
+              <div className={styles.attachmentBlock}>
+                <p className={styles.label}>PDF添付</p>
+                <p className={styles.helpText}>最大3件 / 1ファイル最大15MB / PDFのみ</p>
+
+                <div className={styles.attachmentUploadRow}>
+                  <input ref={attachmentInputRef} type="file" accept=".pdf,application/pdf" className={styles.input} />
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    disabled={selectedId === null || isAttachmentUploading}
+                    onClick={() => void uploadAttachment()}
+                  >
+                    {isAttachmentUploading ? "アップロード中..." : "PDFをアップロード"}
+                  </button>
+                </div>
+
+                {selectedAttachments.length > 0 ? (
+                  <ul className={styles.attachmentList}>
+                    {selectedAttachments.map((attachment) => (
+                      <li key={attachment.id} className={styles.attachmentItem}>
+                        <a href={attachment.download_url || "#"} target="_blank" rel="noopener noreferrer">
+                          {attachment.file_name}
+                        </a>
+                        <span>{formatFileSize(attachment.file_size)}</span>
+                        <button
+                          type="button"
+                          className={styles.dangerButton}
+                          onClick={() => void deleteAttachment(attachment.id)}
+                        >
+                          添付を削除
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.helpText}>添付ファイルはありません。</p>
+                )}
               </div>
 
               <div className={styles.formActions}>

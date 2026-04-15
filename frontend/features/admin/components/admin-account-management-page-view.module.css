@@ -167,6 +167,10 @@
   gap: 6px;
 }
 
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
 .label {
   font-weight: 700;
   color: #0f172a;
@@ -268,6 +272,41 @@
   line-height: 1.6;
 }
 
+.mappingEditor {
+  display: grid;
+  gap: 8px;
+}
+
+.mappingEditorRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.mappingList {
+  display: grid;
+  gap: 6px;
+}
+
+.mappingItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  border-radius: 999px;
+  background: #ecfeff;
+  border: 1px solid #bae6fd;
+  color: #0f172a;
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.mappingArrow {
+  color: #0369a1;
+}
+
 .message {
   margin: 0;
   padding: 12px 14px;
@@ -319,6 +358,10 @@
 
 @media (max-width: 1080px) {
   .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .mappingEditorRow {
     grid-template-columns: 1fr;
   }
 }

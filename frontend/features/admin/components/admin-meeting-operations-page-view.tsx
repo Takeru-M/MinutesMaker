@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Container } from "@/components/ui/container";
 import { Footer, Header, PageHero } from "@/components/layout";
@@ -361,20 +361,66 @@ function AgendaManagementSection({
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const selectablePastAgendas = agendas.filter((agenda) => agenda.meeting_type === "block" && agenda.id !== selectedAgendaId);
   const selectableOtherAgendas = agendas.filter((agenda) => agenda.id !== selectedAgendaId);
+  const [agendaTypeToAdd, setAgendaTypeToAdd] = useState<string>(AGENDA_TYPE_OPTIONS[0]?.value ?? "");
+  const [pastAgendaToAdd, setPastAgendaToAdd] = useState<string>("");
+  const [otherAgendaToAdd, setOtherAgendaToAdd] = useState<string>("");
+  const resolvedPastAgendaToAdd = selectablePastAgendas.some((agenda) => String(agenda.id) === pastAgendaToAdd)
+    ? pastAgendaToAdd
+    : selectablePastAgendas[0]
+      ? String(selectablePastAgendas[0].id)
+      : "";
+  const resolvedOtherAgendaToAdd = selectableOtherAgendas.some((agenda) => String(agenda.id) === otherAgendaToAdd)
+    ? otherAgendaToAdd
+    : selectableOtherAgendas[0]
+      ? String(selectableOtherAgendas[0].id)
+      : "";
 
-  const handleMultiSelectNumberChange = (
-    event: ChangeEvent<HTMLSelectElement>,
-    field: "relatedPastAgendaIds" | "relatedOtherAgendaIds",
-  ) => {
-    const values = Array.from(event.target.selectedOptions)
-      .map((option) => Number.parseInt(option.value, 10))
-      .filter((value) => Number.isFinite(value));
-    onChangeAgendaForm((prev) => ({ ...prev, [field]: values }));
+  const addAgendaType = (nextType: string) => {
+    if (!nextType) {
+      return;
+    }
+    onChangeAgendaForm((prev) => {
+      if (prev.agendaTypes.includes(nextType)) {
+        return prev;
+      }
+      return { ...prev, agendaTypes: [...prev.agendaTypes, nextType] };
+    });
   };
 
-  const handleMultiSelectStringChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const values = Array.from(event.target.selectedOptions).map((option) => option.value);
-    onChangeAgendaForm((prev) => ({ ...prev, agendaTypes: values }));
+  const removeAgendaType = (value: string) => {
+    onChangeAgendaForm((prev) => ({ ...prev, agendaTypes: prev.agendaTypes.filter((item) => item !== value) }));
+  };
+
+  const addRelatedAgenda = (field: "relatedPastAgendaIds" | "relatedOtherAgendaIds", rawId: string) => {
+    const agendaId = Number.parseInt(rawId, 10);
+    if (!Number.isFinite(agendaId)) {
+      return;
+    }
+
+    onChangeAgendaForm((prev) => {
+      const ids = field === "relatedPastAgendaIds" ? prev.relatedPastAgendaIds : prev.relatedOtherAgendaIds;
+      if (ids.includes(agendaId)) {
+        return prev;
+      }
+      if (field === "relatedPastAgendaIds") {
+        return { ...prev, relatedPastAgendaIds: [...prev.relatedPastAgendaIds, agendaId] };
+      }
+      return { ...prev, relatedOtherAgendaIds: [...prev.relatedOtherAgendaIds, agendaId] };
+    });
+  };
+
+  const removeRelatedAgenda = (field: "relatedPastAgendaIds" | "relatedOtherAgendaIds", agendaId: number) => {
+    onChangeAgendaForm((prev) => {
+      if (field === "relatedPastAgendaIds") {
+        return { ...prev, relatedPastAgendaIds: prev.relatedPastAgendaIds.filter((id) => id !== agendaId) };
+      }
+      return { ...prev, relatedOtherAgendaIds: prev.relatedOtherAgendaIds.filter((id) => id !== agendaId) };
+    });
+  };
+
+  const resolveAgendaTitle = (agendaId: number) => {
+    const agenda = agendas.find((item) => item.id === agendaId);
+    return agenda ? `#${agenda.id} ${agenda.title}` : `#${agendaId}`;
   };
 
   const handleAttachmentFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -526,14 +572,37 @@ function AgendaManagementSection({
 
             <label className={styles.field}>
               <span className={styles.label}>議案種別</span>
-              <select className={styles.select} multiple value={agendaForm.agendaTypes} onChange={handleMultiSelectStringChange}>
-                {AGENDA_TYPE_OPTIONS.map((typeOption) => (
-                  <option key={typeOption.value} value={typeOption.value}>
-                    {typeOption.label}
-                  </option>
-                ))}
-              </select>
-              <p className={styles.helpText}>複数選択できます（Mac: Command + クリック）。</p>
+              <div className={styles.buttonRow}>
+                <select
+                  className={styles.select}
+                  value={agendaTypeToAdd}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setAgendaTypeToAdd(value);
+                    addAgendaType(value);
+                  }}
+                >
+                  {AGENDA_TYPE_OPTIONS.map((typeOption) => (
+                    <option key={typeOption.value} value={typeOption.value}>
+                      {typeOption.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.selectedTags}>
+                {agendaForm.agendaTypes.length === 0 ? <span className={styles.helpText}>未選択</span> : null}
+                {agendaForm.agendaTypes.map((typeValue) => {
+                  const label = AGENDA_TYPE_OPTIONS.find((item) => item.value === typeValue)?.label ?? typeValue;
+                  return (
+                    <span key={`agenda-type-${typeValue}`} className={styles.selectedTag}>
+                      {label}
+                      <button type="button" onClick={() => removeAgendaType(typeValue)}>
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
             </label>
 
             <label className={`${styles.field} ${styles.fieldWide}`}>
@@ -565,35 +634,69 @@ function AgendaManagementSection({
 
             <label className={`${styles.field} ${styles.fieldWide}`}>
               <span className={styles.label}>過去の議案ID</span>
-              <select
-                className={styles.select}
-                multiple
-                value={agendaForm.relatedPastAgendaIds.map(String)}
-                onChange={(event) => handleMultiSelectNumberChange(event, "relatedPastAgendaIds")}
-              >
-                {selectablePastAgendas.map((agenda) => (
-                  <option key={`past-${agenda.id}`} value={agenda.id}>
-                    {`#${agenda.id} ${agenda.title}`}
-                  </option>
+              <div className={styles.buttonRow}>
+                <select
+                  className={styles.select}
+                  value={resolvedPastAgendaToAdd}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setPastAgendaToAdd(value);
+                    addRelatedAgenda("relatedPastAgendaIds", value);
+                  }}
+                >
+                  {selectablePastAgendas.length === 0 ? <option value="">選択候補なし</option> : null}
+                  {selectablePastAgendas.map((agenda) => (
+                    <option key={`past-${agenda.id}`} value={agenda.id}>
+                      {`#${agenda.id} ${agenda.title}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.selectedTags}>
+                {agendaForm.relatedPastAgendaIds.length === 0 ? <span className={styles.helpText}>未選択</span> : null}
+                {agendaForm.relatedPastAgendaIds.map((agendaId) => (
+                  <span key={`selected-past-${agendaId}`} className={styles.selectedTag}>
+                    {resolveAgendaTitle(agendaId)}
+                    <button type="button" onClick={() => removeRelatedAgenda("relatedPastAgendaIds", agendaId)}>
+                      ×
+                    </button>
+                  </span>
                 ))}
-              </select>
+              </div>
               <p className={styles.helpText}>ブロック会議の議案から選択できます。</p>
             </label>
 
             <label className={`${styles.field} ${styles.fieldWide}`}>
               <span className={styles.label}>その他の関連議案ID</span>
-              <select
-                className={styles.select}
-                multiple
-                value={agendaForm.relatedOtherAgendaIds.map(String)}
-                onChange={(event) => handleMultiSelectNumberChange(event, "relatedOtherAgendaIds")}
-              >
-                {selectableOtherAgendas.map((agenda) => (
-                  <option key={`other-${agenda.id}`} value={agenda.id}>
-                    {`#${agenda.id} ${agenda.title}`}
-                  </option>
+              <div className={styles.buttonRow}>
+                <select
+                  className={styles.select}
+                  value={resolvedOtherAgendaToAdd}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setOtherAgendaToAdd(value);
+                    addRelatedAgenda("relatedOtherAgendaIds", value);
+                  }}
+                >
+                  {selectableOtherAgendas.length === 0 ? <option value="">選択候補なし</option> : null}
+                  {selectableOtherAgendas.map((agenda) => (
+                    <option key={`other-${agenda.id}`} value={agenda.id}>
+                      {`#${agenda.id} ${agenda.title}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.selectedTags}>
+                {agendaForm.relatedOtherAgendaIds.length === 0 ? <span className={styles.helpText}>未選択</span> : null}
+                {agendaForm.relatedOtherAgendaIds.map((agendaId) => (
+                  <span key={`selected-other-${agendaId}`} className={styles.selectedTag}>
+                    {resolveAgendaTitle(agendaId)}
+                    <button type="button" onClick={() => removeRelatedAgenda("relatedOtherAgendaIds", agendaId)}>
+                      ×
+                    </button>
+                  </span>
                 ))}
-              </select>
+              </div>
               <p className={styles.helpText}>会議種別を問わず選択できます。</p>
             </label>
 
@@ -655,6 +758,7 @@ function AgendaManagementSection({
 
 export function AdminMeetingOperationsPageView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const auth = useAppSelector((state) => state.auth);
   const { t } = useI18n();
 
@@ -666,7 +770,6 @@ export function AdminMeetingOperationsPageView() {
   const [meetingPage, setMeetingPage] = useState(1);
   const [selectedMeetingId, setSelectedMeetingId] = useState<number | null>(null);
   const [selectedAgendaId, setSelectedAgendaId] = useState<number | null>(null);
-  const [selectedFeature, setSelectedFeature] = useState<MeetingOperationsFeature | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMeetingSubmitting, setIsMeetingSubmitting] = useState(false);
   const [isAgendaSubmitting, setIsAgendaSubmitting] = useState(false);
@@ -674,6 +777,22 @@ export function AdminMeetingOperationsPageView() {
   const [selectedAgendaAttachments, setSelectedAgendaAttachments] = useState<AgendaDetailResponse["attachments"]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const selectedFeatureParam = searchParams.get("feature");
+  const selectedFeature: MeetingOperationsFeature | null =
+    selectedFeatureParam === "meeting" || selectedFeatureParam === "agenda" ? selectedFeatureParam : null;
+  const selectedFeatureTitle =
+    selectedFeature === "meeting"
+      ? t("adminMeetingOperationsPage.items.meetingManage.title")
+      : selectedFeature === "agenda"
+        ? t("adminMeetingOperationsPage.items.agendaManage.title")
+        : t("adminMeetingOperationsPage.title");
+  const selectedFeatureDescription =
+    selectedFeature === "meeting"
+      ? t("adminMeetingOperationsPage.items.meetingManage.description")
+      : selectedFeature === "agenda"
+        ? t("adminMeetingOperationsPage.items.agendaManage.description")
+        : t("adminMeetingOperationsPage.description");
 
   const meetingMode = useMemo(() => (selectedMeetingId === null ? "create" : "edit"), [selectedMeetingId]);
   const agendaMode = useMemo(() => (selectedAgendaId === null ? "create" : "edit"), [selectedAgendaId]);
@@ -1048,12 +1167,12 @@ export function AdminMeetingOperationsPageView() {
           {
             title: t("adminMeetingOperationsPage.items.meetingManage.title"),
             description: t("adminMeetingOperationsPage.items.meetingManage.description"),
-            onClick: () => setSelectedFeature("meeting"),
+            onClick: () => router.push("/admin/features/meeting-operations?feature=meeting"),
           },
           {
             title: t("adminMeetingOperationsPage.items.agendaManage.title"),
             description: t("adminMeetingOperationsPage.items.agendaManage.description"),
-            onClick: () => setSelectedFeature("agenda"),
+            onClick: () => router.push("/admin/features/meeting-operations?feature=agenda"),
           },
         ]}
       />
@@ -1088,21 +1207,17 @@ export function AdminMeetingOperationsPageView() {
               管理者機能一覧
             </Link>
             <span className={styles.breadcrumbSeparator}>/</span>
-            <button type="button" className={styles.breadcrumbButton} onClick={() => setSelectedFeature(null)}>
+            <button type="button" className={styles.breadcrumbButton} onClick={() => router.push("/admin/features/meeting-operations")}>
               会議運用管理
             </button>
             <span className={styles.breadcrumbSeparator}>/</span>
-            <span className={styles.breadcrumbCurrent}>
-              {selectedFeature === "meeting"
-                ? t("adminMeetingOperationsPage.items.meetingManage.title")
-                : t("adminMeetingOperationsPage.items.agendaManage.title")}
-            </span>
+            <span className={styles.breadcrumbCurrent}>{selectedFeatureTitle}</span>
           </div>
 
           <PageHero
             badge={t("adminMeetingOperationsPage.badge")}
-            title={t("adminMeetingOperationsPage.title")}
-            description={t("adminMeetingOperationsPage.description")}
+            title={selectedFeatureTitle}
+            description={selectedFeatureDescription}
           />
 
           {statusMessage ? <p className={styles.message}>{statusMessage}</p> : null}

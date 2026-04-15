@@ -333,6 +333,34 @@
   padding: 8px 10px;
 }
 
+.selectedTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selectedTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.selectedTag button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: #334155;
+  line-height: 1;
+}
+
 @media (max-width: 1080px) {
   .grid,
   .formGrid {

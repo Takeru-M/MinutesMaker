@@ -34,7 +34,7 @@ export function AdminFeatureListView() {
   ] as const;
 
   const featureHrefMap: Partial<Record<(typeof featureKeys)[number], string>> = {
-    accountPermission: "/admin/features/account-permission",
+    accountPermission: "/admin/features/account-permission/user-management",
     meetingOperations: "/admin/features/meeting-operations",
     notice: "/admin/features/notice",
     repository: "/admin/features/repository",

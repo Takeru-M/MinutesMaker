@@ -14,12 +14,16 @@ const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 type UserStatus = "active" | "inactive";
 
+type AffiliationRolePair = {
+  affiliation: string;
+  role: string;
+};
+
 type UserManagementItem = {
   id: number;
   username: string;
   fullName: string;
-  affiliation: string[];
-  role: string;
+  affiliationRoles: AffiliationRolePair[];
   status: UserStatus;
   updatedAt: string;
 };
@@ -37,8 +41,7 @@ const INITIAL_USERS: UserManagementItem[] = [
     id: 1,
     username: "admin01",
     fullName: "山田 太郎",
-    affiliation: ["general_affairs_department"],
-    role: "platform_admin",
+    affiliationRoles: [{ affiliation: "general_affairs_department", role: "platform_admin" }],
     status: "active",
     updatedAt: "2026-04-12T09:30:00+09:00",
   },
@@ -46,8 +49,10 @@ const INITIAL_USERS: UserManagementItem[] = [
     id: 2,
     username: "org-user-01",
     fullName: "佐藤 花子",
-    affiliation: ["information_committee", "public_relations_bureau"],
-    role: "org_user",
+    affiliationRoles: [
+      { affiliation: "information_committee", role: "org_user" },
+      { affiliation: "public_relations_bureau", role: "auditor" },
+    ],
     status: "active",
     updatedAt: "2026-04-11T15:20:00+09:00",
   },
@@ -55,8 +60,7 @@ const INITIAL_USERS: UserManagementItem[] = [
     id: 3,
     username: "auditor-team",
     fullName: "監査 担当",
-    affiliation: ["inspection_committee"],
-    role: "auditor",
+    affiliationRoles: [{ affiliation: "inspection_committee", role: "auditor" }],
     status: "inactive",
     updatedAt: "2026-04-10T10:00:00+09:00",
   },
@@ -87,26 +91,44 @@ const BUREAU_TYPES = [
   { value: "sc", label: "SC" },
 ] as const;
 
-const AFFILIATION_LABELS = new Map(
+const AFFILIATION_LABELS: Map<string, string> = new Map(
   [...DEPARTMENT_TYPES, ...COMMITTEE_TYPES, ...BUREAU_TYPES].map((option) => [option.value, option.label]),
 );
 
 const AFFILIATION_OPTION_GROUPS = [
-  { key: "department_types", title: "department_types", options: DEPARTMENT_TYPES },
-  { key: "committee_types", title: "committee_types", options: COMMITTEE_TYPES },
-  { key: "bureau_types", title: "bureau_types", options: BUREAU_TYPES },
+  { key: "department_types", title: "部", options: DEPARTMENT_TYPES },
+  { key: "committee_types", title: "委員会", options: COMMITTEE_TYPES },
+  { key: "bureau_types", title: "局", options: BUREAU_TYPES },
 ] as const;
 
-function formatAffiliation(values: string[]): string {
+const ROLE_OPTIONS = [
+  { value: "platform_admin", label: "platform_admin" },
+  { value: "org_admin", label: "org_admin" },
+  { value: "org_user", label: "org_user" },
+  { value: "auditor", label: "auditor" },
+  { value: "user", label: "user" },
+] as const;
+
+const ROLE_LABELS: Map<string, string> = new Map(ROLE_OPTIONS.map((option) => [option.value, option.label]));
+
+const DEFAULT_AFFILIATION = DEPARTMENT_TYPES[0].value;
+
+function formatAffiliationRoleList(values: AffiliationRolePair[]): string {
   if (values.length === 0) {
     return "-";
   }
 
-  return values.map((value) => AFFILIATION_LABELS.get(value) ?? value).join(" / ");
+  return values
+    .map((value) => `${AFFILIATION_LABELS.get(value.affiliation) ?? value.affiliation} (${ROLE_LABELS.get(value.role) ?? value.role})`)
+    .join(" / ");
 }
 
 function getAffiliationLabel(value: string): string {
   return AFFILIATION_LABELS.get(value) ?? value;
+}
+
+function getRoleLabel(value: string): string {
+  return ROLE_LABELS.get(value) ?? value;
 }
 
 const INITIAL_ASSIGNMENTS: RoleAssignmentItem[] = [
@@ -208,12 +230,16 @@ export function AdminUserManagementPageView() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isFullNameCustomized, setIsFullNameCustomized] = useState(false);
 
+  const createEmptyAffiliationRole = (): AffiliationRolePair => ({
+    affiliation: DEFAULT_AFFILIATION,
+    role: "org_user",
+  });
+
   const selectedUser = useMemo(() => users.find((user) => user.id === selectedId) ?? null, [users, selectedId]);
   const [form, setForm] = useState<Omit<UserManagementItem, "id" | "updatedAt">>({
     username: "",
     fullName: "",
-    affiliation: [],
-    role: "org_user",
+    affiliationRoles: [createEmptyAffiliationRole()],
     status: "active",
   });
 
@@ -227,9 +253,9 @@ export function AdminUserManagementPageView() {
       const haystack = [
         user.username,
         user.fullName,
-        formatAffiliation(user.affiliation),
-        user.affiliation.join(" "),
-        user.role,
+        formatAffiliationRoleList(user.affiliationRoles),
+        user.affiliationRoles.map((item) => item.affiliation).join(" "),
+        user.affiliationRoles.map((item) => item.role).join(" "),
         user.status,
       ]
         .join(" ")
@@ -246,8 +272,7 @@ export function AdminUserManagementPageView() {
     setForm({
       username: "",
       fullName: "",
-      affiliation: [],
-      role: "org_user",
+      affiliationRoles: [createEmptyAffiliationRole()],
       status: "active",
     });
   };
@@ -258,8 +283,8 @@ export function AdminUserManagementPageView() {
     setForm({
       username: user.username,
       fullName: user.fullName,
-      affiliation: user.affiliation,
-      role: user.role,
+      affiliationRoles:
+        user.affiliationRoles.length > 0 ? user.affiliationRoles.map((item) => ({ ...item })) : [createEmptyAffiliationRole()],
       status: user.status,
     });
     setStatusMessage(null);
@@ -279,8 +304,14 @@ export function AdminUserManagementPageView() {
   const saveUser = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (form.affiliation.length === 0) {
+    if (form.affiliationRoles.length === 0) {
       setStatusMessage("所属を1つ以上選択してください。");
+      return;
+    }
+
+    const affiliations = form.affiliationRoles.map((item) => item.affiliation);
+    if (new Set(affiliations).size !== affiliations.length) {
+      setStatusMessage("同じ所属が重複しています。所属ごとに1つのロールを設定してください。");
       return;
     }
 
@@ -322,18 +353,36 @@ export function AdminUserManagementPageView() {
     setStatusMessage("ユーザを削除しました。");
   };
 
-  const toggleAffiliation = (value: string) => {
+  const updateAffiliationRole = (index: number, nextValue: Partial<AffiliationRolePair>) => {
+    setForm((prev) => ({
+      ...prev,
+      affiliationRoles: prev.affiliationRoles.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              ...nextValue,
+            }
+          : item,
+      ),
+    }));
+  };
+
+  const addAffiliationRole = () => {
+    setForm((prev) => ({
+      ...prev,
+      affiliationRoles: [...prev.affiliationRoles, createEmptyAffiliationRole()],
+    }));
+  };
+
+  const removeAffiliationRole = (index: number) => {
     setForm((prev) => {
-      if (prev.affiliation.includes(value)) {
-        return {
-          ...prev,
-          affiliation: prev.affiliation.filter((item) => item !== value),
-        };
+      if (prev.affiliationRoles.length === 1) {
+        return prev;
       }
 
       return {
         ...prev,
-        affiliation: [...prev.affiliation, value],
+        affiliationRoles: prev.affiliationRoles.filter((_, itemIndex) => itemIndex !== index),
       };
     });
   };
@@ -342,7 +391,7 @@ export function AdminUserManagementPageView() {
     <ManagementShell
       redirectPath="/admin/features/account-permission/user-management"
       badge="ADMIN USER MANAGEMENT"
-      title="ユーザ管理"
+      title="アカウント / 権限管理"
       description="ユーザ情報の検索、一覧確認、登録・更新を行います。"
     >
       {statusMessage ? <p className={styles.message}>{statusMessage}</p> : null}
@@ -363,9 +412,9 @@ export function AdminUserManagementPageView() {
           <div className={styles.panel}>
             <AdminListSearchBar
               title="ユーザ検索"
-              description="ユーザ名、氏名、所属、ロールで絞り込みます。"
+              description="ユーザ名、氏名、所属とロールの組み合わせで絞り込みます。"
               value={searchQuery}
-              placeholder="例: admin01, 総務部, org_user"
+              placeholder="例: admin01, 庶務部, org_admin"
               onChange={setSearchQuery}
               onSubmit={(event) => event.preventDefault()}
               onReset={() => setSearchQuery("")}
@@ -377,8 +426,7 @@ export function AdminUserManagementPageView() {
                   <tr>
                     <th>ユーザ名</th>
                     <th>氏名</th>
-                    <th>所属</th>
-                    <th>ロール</th>
+                    <th>所属ごとのロール</th>
                     <th>状態</th>
                     <th>更新日時</th>
                     <th>操作</th>
@@ -390,8 +438,17 @@ export function AdminUserManagementPageView() {
                       <tr key={user.id}>
                         <td>{user.username}</td>
                         <td>{user.fullName}</td>
-                        <td>{formatAffiliation(user.affiliation)}</td>
-                        <td>{user.role}</td>
+                        <td>
+                          <div className={styles.mappingList}>
+                            {user.affiliationRoles.map((item) => (
+                              <div key={`${user.id}-${item.affiliation}`} className={styles.mappingItem}>
+                                <span>{getAffiliationLabel(item.affiliation)}</span>
+                                <span className={styles.mappingArrow}>→</span>
+                                <span>{getRoleLabel(item.role)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
                         <td>
                           <span className={`${styles.statusBadge} ${user.status === "active" ? styles.badgePublished : styles.badgeDraft}`}>
                             {user.status === "active" ? "有効" : "無効"}
@@ -412,7 +469,7 @@ export function AdminUserManagementPageView() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className={styles.emptyState}>
+                      <td colSpan={6} className={styles.emptyState}>
                         {searchQuery.trim() ? "条件に一致するユーザはありません。" : "ユーザが登録されていません。"}
                       </td>
                     </tr>
@@ -457,64 +514,58 @@ export function AdminUserManagementPageView() {
                   />
                 </label>
 
-                <label className={styles.field}>
-                  <span className={styles.label}>所属</span>
-                  <div className={styles.affiliationPicker}>
-                    {AFFILIATION_OPTION_GROUPS.map((group) => (
-                      <fieldset key={group.key} className={styles.affiliationGroup}>
-                        <legend className={styles.affiliationGroupTitle}>{group.title}</legend>
-                        <div className={styles.affiliationOptions}>
-                          {group.options.map((option) => {
-                            const isChecked = form.affiliation.includes(option.value);
-                            return (
-                              <label
-                                key={option.value}
-                                className={`${styles.affiliationOption} ${isChecked ? styles.affiliationOptionActive : ""}`}
-                              >
-                                <input
-                                  className={styles.affiliationCheckbox}
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={() => toggleAffiliation(option.value)}
-                                />
-                                <span>{option.label}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </fieldset>
+                <div className={`${styles.field} ${styles.fieldWide}`}>
+                  <span className={styles.label}>所属とロール</span>
+                  <div className={styles.mappingEditor}>
+                    {form.affiliationRoles.map((item, index) => (
+                      <div key={`affiliation-role-${index}`} className={styles.mappingEditorRow}>
+                        <select
+                          className={styles.select}
+                          value={item.affiliation}
+                          onChange={(event) => updateAffiliationRole(index, { affiliation: event.target.value })}
+                        >
+                          {AFFILIATION_OPTION_GROUPS.map((group) => (
+                            <optgroup key={group.key} label={group.title}>
+                              {group.options.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+
+                        <select
+                          className={styles.select}
+                          value={item.role}
+                          onChange={(event) => updateAffiliationRole(index, { role: event.target.value })}
+                        >
+                          {ROLE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          type="button"
+                          className={styles.dangerButton}
+                          onClick={() => removeAffiliationRole(index)}
+                          disabled={form.affiliationRoles.length === 1}
+                        >
+                          削除
+                        </button>
+                      </div>
                     ))}
                   </div>
-                  <div className={styles.selectedAffiliationWrap}>
-                    <span className={styles.selectedAffiliationTitle}>選択中の所属</span>
-                    {form.affiliation.length > 0 ? (
-                      <div className={styles.selectedAffiliationList}>
-                        {form.affiliation.map((value) => (
-                          <span key={value} className={styles.selectedAffiliationItem}>
-                            {getAffiliationLabel(value)}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className={styles.helpText}>所属を選択してください。</p>
-                    )}
-                  </div>
-                </label>
 
-                <label className={styles.field}>
-                  <span className={styles.label}>ロール</span>
-                  <select
-                    className={styles.select}
-                    value={form.role}
-                    onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
-                  >
-                    <option value="platform_admin">platform_admin</option>
-                    <option value="org_admin">org_admin</option>
-                    <option value="org_user">org_user</option>
-                    <option value="auditor">auditor</option>
-                    <option value="user">user</option>
-                  </select>
-                </label>
+                  <div className={styles.buttonRow}>
+                    <button type="button" className={styles.secondaryButton} onClick={addAffiliationRole}>
+                      所属×ロールを追加
+                    </button>
+                  </div>
+                  <p className={styles.helpText}>所属はプルダウンで選択し、対応するロールを横並びで設定してください。</p>
+                </div>
 
                 <label className={styles.field}>
                   <span className={styles.label}>状態</span>

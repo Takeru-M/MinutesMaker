@@ -417,7 +417,7 @@ export function AdminNoticeCreatePublishPageView() {
     <AdminNoticeShell
       redirectPath="/admin/features/notice/create-publish"
       badge="ADMIN NOTICE"
-      title="お知らせ作成・公開"
+      title="お知らせ管理"
       description="下書き作成から公開、固定表示までを管理します。"
     >
       {statusMessage ? <p className={styles.message}>{statusMessage}</p> : null}

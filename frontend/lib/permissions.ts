@@ -105,7 +105,7 @@ export const ROLE_PERMISSION_ASSIGNMENTS: Record<AuthRole, Set<Permission>> = {
     "guide.read",
     "user.read",
   ] as const),
-  guest_user: new Set(["meeting.read_list"] as const),
+  guest_user: new Set(["meeting.read_list", "agenda.read", "minutes.read"] as const),
   user: new Set([
     "meeting.read_list",
     "meeting.read_detail",

@@ -3,8 +3,8 @@
   z-index: 1;
   width: 100%;
   padding: 20px 0;
-  border-top: 1px solid #dbe2ea;
-  background-color: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid var(--border);
+  background-color: var(--surface-elevated);
   backdrop-filter: blur(8px);
   margin-top: auto;
 }
@@ -18,6 +18,6 @@
 
 .footerInner p {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin: 0;
 }

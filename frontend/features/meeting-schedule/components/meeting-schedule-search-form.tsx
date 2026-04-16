@@ -9,10 +9,18 @@ type MeetingScheduleSearchFormProps = {
     date: string;
     host: string;
     title: string;
+    meetingType: string;
   };
+  meetingTypeOptions: Array<{
+    value: string;
+    label: string;
+  }>;
 };
 
-export function MeetingScheduleSearchForm({ initialFilters }: MeetingScheduleSearchFormProps) {
+export function MeetingScheduleSearchForm({
+  initialFilters,
+  meetingTypeOptions,
+}: MeetingScheduleSearchFormProps) {
   const { t } = useI18n();
 
   return (
@@ -31,6 +39,13 @@ export function MeetingScheduleSearchForm({ initialFilters }: MeetingScheduleSea
           type: "text",
           placeholder: t("meetingScheduleView.placeholders.title"),
         },
+        {
+          name: "meetingType",
+          label: t("meetingScheduleView.filters.meetingType"),
+          type: "select",
+          placeholder: t("meetingScheduleView.placeholders.meetingTypeAll"),
+          options: meetingTypeOptions,
+        },
       ]}
       initialValues={initialFilters}
       submitLabel={t("meetingScheduleView.searchButton")}
@@ -48,6 +63,10 @@ export function MeetingScheduleSearchForm({ initialFilters }: MeetingScheduleSea
 
         if (values.title.trim()) {
           params.set("title", values.title.trim());
+        }
+
+        if (values.meetingType) {
+          params.set("meetingType", values.meetingType);
         }
 
         const query = params.toString();

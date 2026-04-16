@@ -78,7 +78,7 @@ export function HomeView() {
     : t("home.latestMeetingEmpty");
 
   const otherLinks = [
-    { label: t("home.others.o2"), href: "/agenda" },
+    { label: t("home.others.o2"), href: "/minutes" },
     { label: t("home.others.o3"), href: "/agenda" },
     { label: t("home.others.o4"), href: "/repository" },
   ];

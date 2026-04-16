@@ -268,6 +268,7 @@ const meetingTemplates = [
 ] satisfies MeetingScheduleItem[];
 
 const baseScheduledAt = new Date("2026-04-10T09:00:00+09:00");
+const fallbackMeetingTypes = ["large", "block", "annual"] as const;
 
 export const meetingScheduleItems = meetingTemplates.map((template, index) => {
   const scheduledAt = new Date(baseScheduledAt);
@@ -280,5 +281,6 @@ export const meetingScheduleItems = meetingTemplates.map((template, index) => {
     scheduledAt: scheduledAt.toISOString(),
     department: template.department,
     location: template.location,
+    meetingType: fallbackMeetingTypes[index % fallbackMeetingTypes.length],
   } satisfies MeetingScheduleItem;
 });

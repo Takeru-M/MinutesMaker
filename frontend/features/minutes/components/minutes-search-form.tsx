@@ -3,7 +3,7 @@
 import { ContentSearchForm } from "@/features/content-list/components";
 import { useI18n } from "@/features/i18n";
 
-type AgendaSearchFormProps = {
+type MinutesSearchFormProps = {
   initialFilters: {
     date: string;
     source: string;
@@ -11,29 +11,29 @@ type AgendaSearchFormProps = {
   };
 };
 
-export function AgendaSearchForm({ initialFilters }: AgendaSearchFormProps) {
+export function MinutesSearchForm({ initialFilters }: MinutesSearchFormProps) {
   const { t } = useI18n();
 
   return (
     <ContentSearchForm
       fields={[
-        { name: "date", label: t("agendaListView.filters.date"), type: "date" },
+        { name: "date", label: t("minutesListView.filters.date"), type: "date" },
         {
           name: "source",
-          label: t("agendaListView.filters.source"),
+          label: t("minutesListView.filters.source"),
           type: "text",
-          placeholder: t("agendaListView.placeholders.source"),
+          placeholder: t("minutesListView.placeholders.source"),
         },
         {
           name: "title",
-          label: t("agendaListView.filters.title"),
+          label: t("minutesListView.filters.title"),
           type: "text",
-          placeholder: t("agendaListView.placeholders.title"),
+          placeholder: t("minutesListView.placeholders.title"),
         },
       ]}
       initialValues={initialFilters}
-      submitLabel={t("agendaListView.searchButton")}
-      resetLabel={t("agendaListView.resetButton")}
+      submitLabel={t("minutesListView.searchButton")}
+      resetLabel={t("minutesListView.resetButton")}
       buildHref={(values) => {
         const params = new URLSearchParams();
 
@@ -50,10 +50,9 @@ export function AgendaSearchForm({ initialFilters }: AgendaSearchFormProps) {
         }
 
         const query = params.toString();
-
-        return query ? `/agenda?${query}` : "/agenda";
+        return query ? `/minutes?${query}` : "/minutes";
       }}
-      resetHref="/agenda"
+      resetHref="/minutes"
     />
   );
 }

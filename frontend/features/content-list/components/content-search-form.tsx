@@ -8,8 +8,12 @@ import styles from "./content-list-view.module.css";
 type ContentSearchField = {
   name: string;
   label: string;
-  type: "date" | "text";
+  type: "date" | "text" | "select";
   placeholder?: string;
+  options?: Array<{
+    value: string;
+    label: string;
+  }>;
 };
 
 type ContentSearchFormProps = {
@@ -53,14 +57,30 @@ export function ContentSearchForm({
           <label htmlFor={field.name} className={styles.searchLabel}>
             {field.label}
           </label>
-          <input
-            id={field.name}
-            type={field.type}
-            value={values[field.name] ?? ""}
-            onChange={(event) => setValues((current) => ({ ...current, [field.name]: event.target.value }))}
-            placeholder={field.placeholder}
-            className={styles.searchInput}
-          />
+          {field.type === "select" ? (
+            <select
+              id={field.name}
+              value={values[field.name] ?? ""}
+              onChange={(event) => setValues((current) => ({ ...current, [field.name]: event.target.value }))}
+              className={styles.searchInput}
+            >
+              <option value="">{field.placeholder ?? "-"}</option>
+              {(field.options ?? []).map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id={field.name}
+              type={field.type}
+              value={values[field.name] ?? ""}
+              onChange={(event) => setValues((current) => ({ ...current, [field.name]: event.target.value }))}
+              placeholder={field.placeholder}
+              className={styles.searchInput}
+            />
+          )}
         </div>
       ))}
 

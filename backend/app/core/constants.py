@@ -182,6 +182,8 @@ AUDITOR_PERMISSION_NAMES = frozenset(
 GUEST_USER_PERMISSION_NAMES = frozenset(
     {
         "meeting.read_list",
+        "agenda.read",
+        "minutes.read",
     }
 )
 

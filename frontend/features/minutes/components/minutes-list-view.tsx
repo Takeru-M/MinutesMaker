@@ -7,22 +7,24 @@ import { useEffect, useMemo, useState } from "react";
 import { ContentListItemCard, ContentListView } from "@/features/content-list/components";
 import { CONTENT_LIST_ITEMS_PER_PAGE, getContentListPage } from "@/features/content-list/utils/get-content-list-page";
 import { useI18n } from "@/features/i18n";
-import type { AgendaListItemResponse } from "@/lib/api-types";
+import type { AgendaListItemResponse, MinutesListResponse } from "@/lib/api-types";
 import { apiFetch } from "@/lib/api-client";
-import styles from "./agenda-list-view.module.css";
-import { AgendaSearchForm } from "./agenda-search-form";
 
-interface ContentListAgendaItem {
+import { MinutesSearchForm } from "./minutes-search-form";
+import styles from "./minutes-list-view.module.css";
+
+interface MinutesListItem {
   id: string;
   date: string;
   source: string;
   title: string;
+  agendaId: string;
 }
 
-export function AgendaListView() {
+export function MinutesListView() {
   const { locale, t } = useI18n();
   const searchParams = useSearchParams();
-  const [allAgendas, setAllAgendas] = useState<ContentListAgendaItem[]>([]);
+  const [items, setItems] = useState<MinutesListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const filters = {
@@ -32,27 +34,49 @@ export function AgendaListView() {
   };
 
   useEffect(() => {
-    const fetchAgendas = async () => {
+    const fetchMinutes = async () => {
       try {
-        const response = await apiFetch("/api/v1/agendas?sort_order=newest");
-        if (response.ok) {
-          const agendas = (await response.json()) as AgendaListItemResponse[];
-          const converted: ContentListAgendaItem[] = agendas.map((item) => ({
-            id: item.id.toString(),
-            date: item.meeting_scheduled_at ?? item.meeting_date,
-            source: item.meeting_title,
-            title: item.title,
-          }));
-          setAllAgendas(converted);
+        const agendaResponse = await apiFetch("/api/v1/agendas?sort_order=newest");
+        if (!agendaResponse.ok) {
+          return;
         }
+
+        const agendas = (await agendaResponse.json()) as AgendaListItemResponse[];
+        const minuteResponses = await Promise.allSettled(
+          agendas.map((agenda) => apiFetch(`/api/v1/minutes/agenda/${agenda.id}?limit=200`)),
+        );
+
+        const listItems: MinutesListItem[] = [];
+
+        for (let index = 0; index < minuteResponses.length; index += 1) {
+          const result = minuteResponses[index];
+          const agenda = agendas[index];
+          if (!agenda || result.status !== "fulfilled" || !result.value.ok) {
+            continue;
+          }
+
+          const minutesPayload = (await result.value.json()) as MinutesListResponse;
+          for (const minute of minutesPayload.items) {
+            listItems.push({
+              id: String(minute.id),
+              date: minute.published_at ?? minute.created_at,
+              source: agenda.meeting_title,
+              title: minute.title,
+              agendaId: String(agenda.id),
+            });
+          }
+        }
+
+        listItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setItems(listItems);
       } catch (error) {
-        console.error("Failed to fetch agendas:", error);
+        console.error("Failed to fetch minutes list:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAgendas();
+    fetchMinutes();
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -70,14 +94,13 @@ export function AgendaListView() {
       return `${year}-${month}-${day}`;
     };
 
-    return allAgendas.filter((item) => {
+    return items.filter((item) => {
       const matchesDate = !filters.date || toDateString(item.date) === filters.date;
       const matchesSource = !normalizedSource || item.source.toLowerCase().includes(normalizedSource);
       const matchesTitle = !normalizedTitle || item.title.toLowerCase().includes(normalizedTitle);
-
       return matchesDate && matchesSource && matchesTitle;
     });
-  }, [allAgendas, filters.date, filters.source, filters.title]);
+  }, [items, filters.date, filters.source, filters.title]);
 
   const requestedPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
   const { currentPage, totalItems, totalPages, pageItems } = getContentListPage(
@@ -110,32 +133,29 @@ export function AgendaListView() {
 
   return (
     <ContentListView
-      homeLabel={t("agendaListView.home")}
+      homeLabel={t("minutesListView.home")}
       homeHref="/"
-      currentLabel={t("agendaListView.title")}
-      badge={t("agendaListView.badge")}
-      title={t("agendaListView.title")}
-      description={t("agendaListView.description")}
-      searchTitle={t("agendaListView.searchTitle")}
-      sectionTitle={hasFilters ? t("agendaListView.searchResultTitle") : t("agendaListView.listTitle")}
+      currentLabel={t("minutesListView.title")}
+      badge={t("minutesListView.badge")}
+      title={t("minutesListView.title")}
+      description={t("minutesListView.description")}
+      searchTitle={t("minutesListView.searchTitle")}
+      sectionTitle={hasFilters ? t("minutesListView.searchResultTitle") : t("minutesListView.listTitle")}
       totalItems={totalItems}
-      countLabel={t("agendaListView.countLabel")}
-      searchForm={<AgendaSearchForm initialFilters={filters} />}
-      emptyState={t("agendaListView.noResults")}
+      countLabel={t("minutesListView.countLabel")}
+      searchForm={<MinutesSearchForm initialFilters={filters} />}
+      emptyState={t("minutesListView.noResults")}
       pageItems={pageItems.map((item) => ({
         id: item.id,
         rendered: (
-          <Link href={`/agenda/${item.id}`} className={styles.itemLink}>
-            <ContentListItemCard
-              meta={`${formatDate(item.date)} ・ ${item.source}`}
-              title={item.title}
-            />
+          <Link href={`/agenda/${item.agendaId}`} className={styles.itemLink}>
+            <ContentListItemCard meta={`${formatDate(item.date)} ・ ${item.source}`} title={item.title} />
           </Link>
         ),
       }))}
       currentPage={currentPage}
       pageNumbers={pageNumbers}
-      paginationAriaLabel={t("agendaListView.paginationAriaLabel")}
+      paginationAriaLabel={t("minutesListView.paginationAriaLabel")}
       buildPageHref={(page) => {
         const params = new URLSearchParams();
 
@@ -156,7 +176,7 @@ export function AgendaListView() {
         }
 
         const query = params.toString();
-        return query ? `/agenda?${query}` : "/agenda";
+        return query ? `/minutes?${query}` : "/minutes";
       }}
     />
   );

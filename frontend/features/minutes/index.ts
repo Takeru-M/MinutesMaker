@@ -1,0 +1,1 @@
+export { MinutesListView } from "./components/minutes-list-view";

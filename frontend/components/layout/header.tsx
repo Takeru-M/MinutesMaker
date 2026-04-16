@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent a
 
 import { Container } from "@/components/ui/container";
 import { useI18n } from "@/features/i18n";
+import { useTheme } from "@/features/theme";
 import { logout } from "@/lib/api-client";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutSucceeded } from "@/store/slices/auth-slice";
@@ -17,6 +18,7 @@ export function Header() {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state) => state.auth);
   const { locale, setLocale, t } = useI18n();
+  const { theme, setTheme } = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -156,6 +158,28 @@ export function Header() {
                       onClick={() => setLocale("en")}
                     >
                       {t("header.langEn")}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.menuSection}>
+                  <p className={styles.menuHeading}>{t("header.theme")}</p>
+                  <div className={styles.langSwitch}>
+                    <button
+                      type="button"
+                      className={`${styles.langButton} ${theme === "light" ? styles.langButtonActive : ""}`}
+                      onClick={() => setTheme("light")}
+                      aria-pressed={theme === "light"}
+                    >
+                      {t("header.themeLight")}
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.langButton} ${theme === "dark" ? styles.langButtonActive : ""}`}
+                      onClick={() => setTheme("dark")}
+                      aria-pressed={theme === "dark"}
+                    >
+                      {t("header.themeDark")}
                     </button>
                   </div>
                 </div>

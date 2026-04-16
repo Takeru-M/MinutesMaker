@@ -3,8 +3,8 @@
   z-index: 10;
   width: 100%;
   padding: 14px 0;
-  border-bottom: 1px solid #dbe2ea;
-  background-color: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface-elevated);
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -42,14 +42,14 @@
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .brandTitle {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0;
   white-space: nowrap;
 }
@@ -89,30 +89,30 @@
   flex: 1;
   min-width: 0;
   padding: 8px 12px;
-  border: 1px solid #dbe2ea;
+  border: 1px solid var(--border);
   border-radius: 10px;
   font-size: 13px;
-  color: #0f172a;
-  background: #ffffff;
+  color: var(--text-primary);
+  background: var(--surface);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .searchInput::placeholder {
-  color: #64748b;
+  color: var(--text-muted);
   opacity: 1;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .searchButton {
   flex-shrink: 0;
-  border: 1px solid #dbe2ea;
-  background: #ffffff;
-  color: #334155;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 12px;
@@ -121,15 +121,15 @@
 }
 
 .searchButton:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  background: var(--surface-muted);
+  border-color: var(--border-strong);
 }
 
 .navItem {
   text-decoration: none;
   font-size: 0.84rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-secondary);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -139,9 +139,9 @@
 }
 
 .navItem:hover {
-  background-color: #f8fafc;
-  border-bottom-color: #3b82f6;
-  color: #0f172a;
+  background-color: var(--surface-muted);
+  border-bottom-color: var(--accent);
+  color: var(--text-primary);
 }
 
 .actions {
@@ -163,15 +163,15 @@
   align-items: center;
   justify-content: center;
   border: none;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--surface);
+  color: var(--text-primary);
   font-size: 24px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .gearButton:hover {
-  background: #f8fafc;
+  background: var(--surface-muted);
 }
 
 .menuPanel {
@@ -180,9 +180,9 @@
   top: calc(100% + 10px);
   min-width: 220px;
   padding: 12px;
-  border: 1px solid #dbe2ea;
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--surface-elevated);
   box-shadow: 0 18px 30px rgba(15, 23, 42, 0.14);
   display: grid;
   gap: 12px;
@@ -198,12 +198,12 @@
   margin: 0;
   font-size: 12px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .langSwitch {
   display: flex;
-  border: 1px solid #dbe2ea;
+  border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -214,28 +214,28 @@
   justify-content: center;
   min-width: 76px;
   border: none;
-  background: #ffffff;
-  color: #334155;
+  background: var(--surface);
+  color: var(--text-secondary);
   font-size: 12px;
   padding: 6px 10px;
   cursor: pointer;
 }
 
 .langButton + .langButton {
-  border-left: 1px solid #dbe2ea;
+  border-left: 1px solid var(--border);
 }
 
 .langButtonActive {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: var(--accent-soft);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 .menuLogoutButton {
-  border: 1px solid #fee2e2;
+  border: 1px solid var(--danger-border);
   border-radius: 10px;
-  background: #fff5f5;
-  color: #dc2626;
+  background: var(--danger-surface);
+  color: var(--danger);
   font-size: 13px;
   font-weight: 600;
   padding: 8px 12px;
@@ -244,8 +244,8 @@
 }
 
 .menuLogoutButton:hover:not(:disabled) {
-  border-color: #ef4444;
-  background: #fef2f2;
+  border-color: var(--danger);
+  background: var(--danger-surface);
 }
 
 .menuLogoutButton:disabled {

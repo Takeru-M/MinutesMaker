@@ -291,8 +291,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "large_facility",
             "meeting_key": "dormitory_assembly_20260420",
-            "meeting_date": datetime(2026, 4, 20, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY,
             "title": "施設改善に関する議案",
             "responsible": "施設管理委員会",
             "description": None,
@@ -304,8 +302,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "large_purchase",
             "meeting_key": "dormitory_assembly_20260420",
-            "meeting_date": datetime(2026, 4, 20, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY,
             "title": "備品購入フロー見直し議案",
             "responsible": "総務委員会",
             "description": None,
@@ -317,8 +313,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "block_disaster",
             "meeting_key": "block_20260413",
-            "meeting_date": datetime(2026, 4, 13, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_BLOCK,
             "title": "防災訓練実施計画議案",
             "responsible": "防災担当",
             "description": None,
@@ -330,8 +324,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "block_budget",
             "meeting_key": "block_20260413",
-            "meeting_date": datetime(2026, 4, 13, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_BLOCK,
             "title": "ブロック予算配分に関する議案",
             "responsible": "会計担当",
             "description": None,
@@ -343,8 +335,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "annual_policy",
             "meeting_key": "annual_20260331",
-            "meeting_date": datetime(2026, 3, 31, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_ANNUAL,
             "title": "年次運営方針に関する議案",
             "responsible": "運営委員会",
             "description": None,
@@ -368,8 +358,6 @@ def seed_sample_agendas(db: Session) -> None:
         if agenda is None:
             agenda = Agenda(
                 meeting_id=meeting_id,
-                meeting_date=spec["meeting_date"],
-                meeting_type=spec["meeting_type"],
                 title=spec["title"],
                 responsible=spec["responsible"],
                 description=spec["description"],
@@ -386,8 +374,6 @@ def seed_sample_agendas(db: Session) -> None:
             db.flush()
         else:
             agenda.title = spec["title"]
-            agenda.meeting_date = spec["meeting_date"]
-            agenda.meeting_type = spec["meeting_type"]
             agenda.responsible = spec["responsible"]
             agenda.description = spec["description"]
             agenda.content = spec["content"]

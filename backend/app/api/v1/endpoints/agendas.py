@@ -12,6 +12,7 @@ from app.crud.agenda import (
     get_agenda_attachment_by_id,
     get_agenda_attachments,
     get_agenda_by_id,
+    get_agenda_with_meeting_by_id,
     get_related_agenda_ids,
     list_agendas,
     search_agendas,
@@ -69,8 +70,8 @@ def read_agendas(
         AgendaListItemResponse(
             id=agenda.id or 0,
             title=agenda.title,
-            meeting_date=agenda.meeting_date,
-            meeting_type=agenda.meeting_type,
+            meeting_date=meeting.scheduled_at.date(),
+            meeting_type=meeting.meeting_type,
             meeting_title=meeting.title,
             meeting_scheduled_at=meeting.scheduled_at,
         )
@@ -106,10 +107,11 @@ def read_agenda(
     db: Session = Depends(get_session),
     _user=Depends(require_permissions("agenda.read")),
 ) -> AgendaReadResponse:
-    agenda = get_agenda_by_id(db, agenda_id)
-    if agenda is None:
+    result = get_agenda_with_meeting_by_id(db, agenda_id)
+    if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda not found")
-
+    
+    agenda, meeting = result
     response = AgendaReadResponse.model_validate(agenda)
     response = response.model_copy(
         update={
@@ -126,6 +128,9 @@ def read_agenda(
             "attachments": [
                 _to_attachment_response(attachment) for attachment in get_agenda_attachments(db, agenda.id or 0)
             ],
+            "meeting_date": meeting.scheduled_at.date(),
+            "meeting_type": meeting.meeting_type,
+            "meeting_scheduled_at": meeting.scheduled_at,
         }
     )
     if agenda.pdf_s3_key:

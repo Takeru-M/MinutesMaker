@@ -25,6 +25,16 @@ class AgendaCreateRequest(BaseModel):
     related_past_agenda_ids: list[int] = Field(default_factory=list)
     related_other_agenda_ids: list[int] = Field(default_factory=list)
 
+    @field_validator("meeting_type", mode="before")
+    @classmethod
+    def normalize_meeting_type(cls, v: str) -> str:
+        normalized = (v or "").strip().lower()
+        if normalized == "large":
+            return MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY
+        if normalized in {MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY, MEETING_TYPE_BLOCK, "annual"}:
+            return normalized
+        return v
+
 
 class AgendaUpdateRequest(BaseModel):
     meeting_date: date
@@ -47,16 +57,6 @@ class AgendaUpdateRequest(BaseModel):
     def normalize_meeting_type(cls, v: str) -> str:
         normalized = (v or "").strip().lower()
         if normalized == "large":
-            return "dormitory_general_assembly"
-        if normalized in {"dormitory_general_assembly", "block", "annual"}:
-            return normalized
-        return v
-
-    @field_validator("meeting_type", mode="before")
-    @classmethod
-    def normalize_meeting_type(cls, v: str) -> str:
-        normalized = (v or "").strip().lower()
-        if normalized == "large":
             return MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY
         if normalized in {MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY, MEETING_TYPE_BLOCK, "annual"}:
             return normalized
@@ -68,8 +68,8 @@ class AgendaReadResponse(BaseModel):
 
     id: int
     meeting_id: int
-    meeting_date: date
-    meeting_type: str
+    meeting_date: Optional[date] = None
+    meeting_type: Optional[str] = None
     title: str
     responsible: Optional[str]
     description: Optional[str]
@@ -91,6 +91,7 @@ class AgendaReadResponse(BaseModel):
     related_past_agenda_ids: list[int] = Field(default_factory=list)
     related_other_agenda_ids: list[int] = Field(default_factory=list)
     attachments: list["AgendaAttachmentResponse"] = Field(default_factory=list)
+    meeting_scheduled_at: Optional[datetime] = None
 
 
 class AgendaListItemResponse(BaseModel):

@@ -21,7 +21,7 @@ class AgendaRelation(SQLModel, table=True):
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    source_agenda_id: int = Field(foreign_key="agendas.id", nullable=False, index=True)
-    target_agenda_id: int = Field(foreign_key="agendas.id", nullable=False, index=True)
+    source_agenda_id: int = Field(foreign_key="agendas.id", nullable=False, index=True, ondelete="CASCADE")
+    target_agenda_id: int = Field(foreign_key="agendas.id", nullable=False, index=True, ondelete="CASCADE")
     relation_type: str = Field(nullable=False, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)

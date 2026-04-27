@@ -1,9 +1,11 @@
 from datetime import date, datetime, time, timedelta
 
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from app.models.agenda import Agenda
 from app.models.meeting import Meeting
+from app.models.minutes import Minutes
 from app.schemas.meeting import MeetingCreateRequest, MeetingUpdateRequest
 
 
@@ -89,8 +91,6 @@ def update_meeting(db: Session, *, meeting_id: int, payload: MeetingUpdateReques
 
     related_agendas = list(db.exec(select(Agenda).where(Agenda.meeting_id == meeting_id)).all())
     for agenda in related_agendas:
-        agenda.meeting_date = payload.scheduled_at.date()
-        agenda.meeting_type = payload.meeting_type
         agenda.updated_at = datetime.utcnow()
         db.add(agenda)
 
@@ -109,8 +109,16 @@ def delete_meeting(db: Session, *, meeting_id: int) -> bool:
     if has_agendas:
         raise ValueError("Meeting has agendas and cannot be deleted")
 
+    has_minutes = db.exec(select(Minutes.id).where(Minutes.meeting_id == meeting_id)).first() is not None
+    if has_minutes:
+        raise ValueError("Meeting has minutes and cannot be deleted")
+
     db.delete(meeting)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise ValueError("Meeting is referenced by related data and cannot be deleted") from exc
     return True
 
 

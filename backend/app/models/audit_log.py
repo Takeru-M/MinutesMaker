@@ -9,7 +9,7 @@ class AuditLog(SQLModel, table=True):
     __tablename__ = "audit_logs"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    actor_user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    actor_user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True, ondelete="SET NULL")
     actor_role_snapshot: Optional[str] = Field(default=None)
     entity_type: str = Field(nullable=False, index=True)
     entity_id: str = Field(nullable=False, index=True)

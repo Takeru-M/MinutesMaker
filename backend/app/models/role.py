@@ -31,10 +31,10 @@ class UserRole(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("user_id", "role_id", name="uq_user_roles_user_role"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", nullable=False, index=True)
-    role_id: int = Field(foreign_key="roles.id", nullable=False, index=True)
+    user_id: int = Field(foreign_key="user.id", nullable=False, index=True, ondelete="RESTRICT")
+    role_id: int = Field(foreign_key="roles.id", nullable=False, index=True, ondelete="RESTRICT")
     assigned_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    assigned_by: Optional[int] = Field(default=None, foreign_key="user.id")
+    assigned_by: Optional[int] = Field(default=None, foreign_key="user.id", ondelete="SET NULL")
 
 
 class RolePermission(SQLModel, table=True):

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@/features/assistant/types/chat-types";
 import type { MeetingQAResponse } from "@/lib/api-types-assistant";
 import { useQAJobPolling } from "@/features/assistant/hooks/use-qa-job-polling";
@@ -62,32 +62,36 @@ export function AssistantChatPanel({ meetingId, isOpen, onClose }: AssistantChat
     resizeStart.current = { x: e.clientX, y: e.clientY, ...size };
   };
 
+  const handleQAComplete = useCallback((result: object) => {
+    setMessages((prev) => {
+      const updated = [...prev];
+      const last = updated[updated.length - 1];
+      if (last?.jobId === currentJobId) {
+        last.qaResult = result as MeetingQAResponse;
+        last.isLoading = false;
+      }
+      return updated;
+    });
+    setCurrentJobId(null);
+  }, [currentJobId]);
+
+  const handleQAError = useCallback((errorMsg: string) => {
+    setMessages((prev) => {
+      const updated = [...prev];
+      const last = updated[updated.length - 1];
+      if (last?.jobId === currentJobId) {
+        last.error = errorMsg;
+        last.isLoading = false;
+      }
+      return updated;
+    });
+    setCurrentJobId(null);
+  }, [currentJobId]);
+
   const { isLoading: isPolling } = useQAJobPolling({
     jobId: currentJobId,
-    onComplete: (result) => {
-      setMessages((prev) => {
-        const updated = [...prev];
-        const last = updated[updated.length - 1];
-        if (last?.jobId === currentJobId) {
-          last.qaResult = result as MeetingQAResponse;
-          last.isLoading = false;
-        }
-        return updated;
-      });
-      setCurrentJobId(null);
-    },
-    onError: (errorMsg) => {
-      setMessages((prev) => {
-        const updated = [...prev];
-        const last = updated[updated.length - 1];
-        if (last?.jobId === currentJobId) {
-          last.error = errorMsg;
-          last.isLoading = false;
-        }
-        return updated;
-      });
-      setCurrentJobId(null);
-    },
+    onComplete: handleQAComplete,
+    onError: handleQAError,
   });
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {

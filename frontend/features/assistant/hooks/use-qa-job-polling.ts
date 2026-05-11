@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { MeetingQAJobStatus } from "@/lib/api-types-assistant";
 import { getMeetingQAJobStatus } from "@/lib/api-client";
 
@@ -25,35 +25,56 @@ export function useQAJobPolling({
   const [result, setResult] = useState<object | null>(null);
   const [interval, setInterval] = useState(initialInterval);
 
+  // Keep latest callbacks in refs to avoid dependency array issues
+  const onCompleteRef = useRef(onComplete);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
   useEffect(() => {
     if (!jobId) return;
 
+    let isMounted = true;
+
     const poll = async () => {
+      if (!isMounted) return;
+
       try {
         setIsLoading(true);
         const data = await getMeetingQAJobStatus(jobId);
+
+        if (!isMounted) return;
 
         setStatus(data.status as MeetingQAJobStatus);
 
         if (data.error) {
           setError(data.error);
-          onError?.(data.error);
+          onErrorRef.current?.(data.error);
         }
 
         if (data.status === "finished" && data.result) {
           setResult(data.result);
-          onComplete?.(data.result);
+          onCompleteRef.current?.(data.result);
         } else if (data.status === "failed") {
           const errorMsg = data.error || "Job failed";
           setError(errorMsg);
-          onError?.(errorMsg);
+          onErrorRef.current?.(errorMsg);
         }
       } catch (err) {
+        if (!isMounted) return;
         const errorMsg = err instanceof Error ? err.message : "Polling failed";
         setError(errorMsg);
-        onError?.(errorMsg);
+        onErrorRef.current?.(errorMsg);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -68,8 +89,11 @@ export function useQAJobPolling({
       setInterval((prev) => (prev < maxInterval ? Math.min(prev * 1.5, maxInterval) : maxInterval));
     }, interval);
 
-    return () => clearInterval(pollInterval);
-  }, [jobId, onComplete, onError, interval, maxInterval]);
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+    };
+  }, [jobId, interval, maxInterval]);
 
   return {
     status,

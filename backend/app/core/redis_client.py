@@ -11,3 +11,9 @@ from app.core.config import settings
 def get_redis() -> Redis:
     # decode_responses keeps keys/values as str for easier JSON handling.
     return Redis.from_url(settings.redis_url, decode_responses=True)
+
+
+@lru_cache(maxsize=1)
+def get_redis_for_rq() -> Redis:
+    # RQ requires binary mode (decode_responses=False) for pickle serialization
+    return Redis.from_url(settings.redis_url, decode_responses=False)

@@ -5,7 +5,7 @@ from sqlmodel import Session
 
 from app.core.auth_dependencies import require_permissions
 from app.core.job_queue import get_ingest_queue, get_qa_queue
-from app.core.redis_client import get_redis
+from app.core.redis_client import get_redis_for_rq
 from app.db.session import get_session
 from app.schemas.meeting_qa import (
     AssistantQAJobEnqueueResponse,
@@ -197,7 +197,7 @@ def get_assistant_qa_job_status_endpoint(
     Job = getattr(rq_job_module, "Job")
     NoSuchJobError = getattr(rq_exceptions_module, "NoSuchJobError")
 
-    redis_conn = get_redis()
+    redis_conn = get_redis_for_rq()
     try:
         job = Job.fetch(job_id, connection=redis_conn)
     except NoSuchJobError as exc:

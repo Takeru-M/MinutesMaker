@@ -3,7 +3,7 @@ from __future__ import annotations
 from redis import Redis
 from rq import Queue
 
-from app.core.redis_client import get_redis
+from app.core.redis_client import get_redis_for_rq
 
 QA_QUEUE_NAME = "qa"
 INGEST_QUEUE_NAME = "ingest"
@@ -11,7 +11,7 @@ LOW_QUEUE_NAME = "low"
 
 
 def get_queue(name: str, redis_conn: Redis | None = None) -> Queue:
-    connection = redis_conn or get_redis()
+    connection = redis_conn or get_redis_for_rq()
     return Queue(name=name, connection=connection)
 
 

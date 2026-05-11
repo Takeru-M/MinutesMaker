@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getCurrentUser } from "@/lib/api-client";
 import { useAppDispatch } from "@/store/hooks";
 import { loginSucceeded, logoutSucceeded } from "@/store/slices/auth-slice";
+import { AssistantGlobal } from "@/components/providers/assistant-global";
 
 type AuthBootstrapProps = {
   children: React.ReactNode;
@@ -58,5 +59,10 @@ export function AuthBootstrap({ children }: AuthBootstrapProps) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <AssistantGlobal />
+    </>
+  );
 }

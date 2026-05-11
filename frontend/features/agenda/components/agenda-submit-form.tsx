@@ -6,14 +6,14 @@ import { useI18n } from "@/features/i18n";
 import { AgendaFormData } from "@/features/agenda/types/agenda-form";
 import { validateRequiredAgendaFields } from "@/features/agenda/validation/agenda-form-validation";
 import type { AgendaCreateRequest, AgendaPdfUploadResponse, AgendaSearchItemResponse, MeetingListItemResponse } from "@/lib/api-types";
-import { apiFetch } from "@/lib/api-client";
+import { API_QUERY_LIMIT, apiFetch } from "@/lib/api-client";
 import { formatDateToJapanese } from "@/lib/date-formatter";
 import type { RootState } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   clearAgendaFieldError,
   resetAgendaValidation,
-  validateAgendaForm,
+  setAgendaErrors,
 } from "@/store/slices/agenda-validation-slice";
 import styles from "./agenda-submit-form.module.css";
 
@@ -65,6 +65,8 @@ export function AgendaSubmitForm() {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfTypeError, setPdfTypeError] = useState<string | null>(null);
   const [isSubmittingToApi, setIsSubmittingToApi] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [agendaDates, setAgendaDates] = useState<{ value: string; label: string }[]>([]);
   const [isLoadingDates, setIsLoadingDates] = useState(true);
 
@@ -184,6 +186,8 @@ export function AgendaSubmitForm() {
     setFormData(initialFormData);
     setPdfPreviewUrl(null);
     setPdfTypeError(null);
+    setSubmitError(null);
+    setSubmitSuccess(null);
     setPastQuery("");
     setOtherQuery("");
     setPastResults([]);
@@ -302,7 +306,7 @@ export function AgendaSubmitForm() {
     const fetchBlockMeetings = async () => {
       setIsLoadingDates(true);
       try {
-        const response = await apiFetch("/api/v1/meetings?limit=500");
+        const response = await apiFetch(`/api/v1/meetings?limit=${API_QUERY_LIMIT}`);
         if (!response.ok) {
           return;
         }
@@ -338,11 +342,12 @@ export function AgendaSubmitForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
+    setSubmitSuccess(null);
 
-    dispatch(validateAgendaForm(formData));
-    const latestErrors = validateRequiredAgendaFields(formData);
-
-    if (Object.keys(latestErrors).length > 0) {
+    const validationErrors = validateRequiredAgendaFields(formData);
+    dispatch(setAgendaErrors(validationErrors));
+    if (Object.keys(validationErrors).length > 0) {
       return;
     }
 
@@ -361,7 +366,7 @@ export function AgendaSubmitForm() {
         });
 
         if (!uploadResponse.ok) {
-          alert(t("agendaForm.errors.submitFailed"));
+          setSubmitError(t("agendaForm.errors.submitFailed"));
           return;
         }
 
@@ -396,16 +401,16 @@ export function AgendaSubmitForm() {
       });
 
       if (!response.ok) {
-        alert(t("agendaForm.errors.submitFailed"));
+        setSubmitError(t("agendaForm.errors.submitFailed"));
         return;
       }
 
-      alert(t("agendaForm.submitted"));
+      setSubmitSuccess(t("agendaForm.submitted"));
       handleReset();
       searchRelatedAgendas("past");
       searchRelatedAgendas("other");
     } catch {
-      alert(t("agendaForm.errors.submitFailed"));
+      setSubmitError(t("agendaForm.errors.submitFailed"));
     } finally {
       setIsSubmittingToApi(false);
     }
@@ -721,6 +726,9 @@ export function AgendaSubmitForm() {
               ))}
             </div>
           </div>
+
+          {submitError && <p className={styles.errorText}>{submitError}</p>}
+          {submitSuccess && <p className={styles.successText}>{submitSuccess}</p>}
 
           {/* ボタン */}
           <div className={styles.buttonGroup}>

@@ -22,7 +22,8 @@ class MeetingKnowledgeSource(SQLModel, table=True):
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    meeting_id: int = Field(foreign_key="meetings.id", nullable=False, index=True, ondelete="CASCADE")
+    meeting_id: Optional[int] = Field(default=None, foreign_key="meetings.id", nullable=True, index=True, ondelete="CASCADE")
+    org_id: Optional[int] = Field(default=None, foreign_key="organizations.id", nullable=True, index=True, ondelete="SET NULL")
     source_type: str = Field(nullable=False, index=True)
     source_entity_id: int = Field(nullable=False, index=True)
     source_label: Optional[str] = Field(default=None)
@@ -45,7 +46,7 @@ class MeetingKnowledgeChunk(SQLModel, table=True):
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    meeting_id: int = Field(foreign_key="meetings.id", nullable=False, index=True, ondelete="CASCADE")
+    meeting_id: Optional[int] = Field(default=None, foreign_key="meetings.id", nullable=True, index=True, ondelete="CASCADE")
     source_id: int = Field(foreign_key="meeting_knowledge_sources.id", nullable=False, index=True, ondelete="CASCADE")
     chunk_index: int = Field(nullable=False)
     chunk_text: str = Field(default="", sa_column=Column(Text, nullable=False))
@@ -61,7 +62,7 @@ class MeetingQALog(SQLModel, table=True):
     __tablename__ = "meeting_qa_logs"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    meeting_id: int = Field(foreign_key="meetings.id", nullable=False, index=True, ondelete="CASCADE")
+    meeting_id: Optional[int] = Field(default=None, foreign_key="meetings.id", nullable=True, index=True, ondelete="CASCADE")
     user_id: int = Field(foreign_key="user.id", nullable=False, index=True, ondelete="RESTRICT")
     question: str = Field(default="", sa_column=Column(Text, nullable=False))
     answer: str = Field(default="", sa_column=Column(Text, nullable=False))

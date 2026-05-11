@@ -37,7 +37,7 @@
 .textarea {
   padding: 10px 12px;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text-primary);
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   background-color: #fff;
@@ -47,12 +47,12 @@
 
 .input::placeholder,
 .textarea::placeholder {
-  color: #64748b;
+  color: var(--text-muted);
   opacity: 1;
 }
 
 .input[type="datetime-local"]::placeholder {
-  color: #64748b;
+  color: var(--text-muted);
   opacity: 1;
 }
 
@@ -100,10 +100,17 @@
   font-weight: 500;
 }
 
+.successText {
+  font-size: 14px;
+  color: #16a34a;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
 .helperText {
   margin: 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .requiredEitherNotice {
@@ -111,7 +118,7 @@
   padding: 10px 12px;
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-secondary);
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -120,14 +127,14 @@
 .fileHint {
   margin: 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .fileSelectButton {
   align-self: flex-start;
   border: 1px dashed #94a3b8;
-  background: #f8fafc;
-  color: #334155;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 14px;
@@ -157,7 +164,7 @@
 .fileNameButton {
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--accent);
   padding: 0;
   text-decoration: underline;
   font-size: 14px;
@@ -208,7 +215,7 @@
   gap: 8px;
   cursor: pointer;
   font-size: 14px;
-  color: #334155;
+  color: var(--text-secondary);
   transition: color 0.2s ease;
 }
 
@@ -254,7 +261,7 @@
 
 .placeholderText {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -269,7 +276,7 @@
   border-radius: 6px;
   padding: 0 14px;
   background: #fff;
-  color: #334155;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -284,7 +291,7 @@
   margin-top: 8px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--surface-muted);
   min-height: 60px;
   max-height: 220px;
   overflow: auto;
@@ -306,7 +313,7 @@
 
 .relatedListItem span {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .selectedTags {
@@ -359,7 +366,7 @@
 }
 
 .previewDialog::backdrop {
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--text-primary);
 }
 
 .previewDialogHeader {
@@ -369,14 +376,14 @@
   gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--surface-muted);
+  color: var(--text-primary);
 }
 
 .previewCloseButton {
   border: 1px solid #cbd5e1;
   background: #fff;
-  color: #334155;
+  color: var(--text-secondary);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 12px;

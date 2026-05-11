@@ -8,17 +8,25 @@ from app.models.meeting_knowledge import MeetingKnowledgeChunk, MeetingKnowledge
 def get_source_by_entity(
     session: Session,
     *,
-    meeting_id: int,
+    meeting_id: int | None,
     source_type: str,
     source_entity_id: int,
     version_tag: str = "latest",
 ) -> MeetingKnowledgeSource | None:
-    stmt = select(MeetingKnowledgeSource).where(
-        MeetingKnowledgeSource.meeting_id == meeting_id,
-        MeetingKnowledgeSource.source_type == source_type,
-        MeetingKnowledgeSource.source_entity_id == source_entity_id,
-        MeetingKnowledgeSource.version_tag == version_tag,
-    )
+    if meeting_id is None:
+        stmt = select(MeetingKnowledgeSource).where(
+            MeetingKnowledgeSource.meeting_id.is_(None),
+            MeetingKnowledgeSource.source_type == source_type,
+            MeetingKnowledgeSource.source_entity_id == source_entity_id,
+            MeetingKnowledgeSource.version_tag == version_tag,
+        )
+    else:
+        stmt = select(MeetingKnowledgeSource).where(
+            MeetingKnowledgeSource.meeting_id == meeting_id,
+            MeetingKnowledgeSource.source_type == source_type,
+            MeetingKnowledgeSource.source_entity_id == source_entity_id,
+            MeetingKnowledgeSource.version_tag == version_tag,
+        )
     return session.exec(stmt).first()
 
 

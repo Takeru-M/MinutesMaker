@@ -125,6 +125,14 @@ def _ensure_schema_compatibility() -> None:
                         "ADD COLUMN meeting_type VARCHAR(50) NOT NULL DEFAULT 'dormitory_general_assembly'"
                     )
                 )
+            if "organization_id" not in meeting_columns:
+                conn.execute(
+                    text(
+                        "ALTER TABLE meetings "
+                        "ADD COLUMN organization_id INT NULL, "
+                        "ADD INDEX ix_meetings_organization_id (organization_id)"
+                    )
+                )
 
         if "agendas" in table_names:
             agenda_columns = {col["name"] for col in inspector.get_columns("agendas")}

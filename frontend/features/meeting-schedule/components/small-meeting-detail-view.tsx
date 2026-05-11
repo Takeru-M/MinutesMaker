@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Footer, Header } from "@/components/layout";
 import { Container } from "@/components/ui/container";
+import { AssistantChatPanel, AssistantChatToggle } from "@/features/assistant";
 import { useI18n } from "@/features/i18n";
 import type {
   MeetingDetailResponse,
@@ -35,6 +36,7 @@ export function SmallMeetingDetailView({ meetingId }: SmallMeetingDetailViewProp
   const [contentType, setContentType] = useState<"text" | "pdf">("text");
   const [body, setBody] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
 
   const normalizedMeetingId = meetingId?.trim();
   const isValidMeetingId = /^\d+$/.test(normalizedMeetingId);
@@ -408,6 +410,21 @@ export function SmallMeetingDetailView({ meetingId }: SmallMeetingDetailViewProp
       </Container>
 
       <Footer />
+
+      {/* AI Assistant Panel */}
+      <AssistantChatPanel
+        meetingId={meeting?.id}
+        isOpen={isChatPanelOpen}
+        onClose={() => setIsChatPanelOpen(false)}
+      />
+
+      {/* AI Assistant Toggle Button */}
+      <div style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 999 }}>
+        <AssistantChatToggle
+          isOpen={isChatPanelOpen}
+          onClick={() => setIsChatPanelOpen(!isChatPanelOpen)}
+        />
+      </div>
     </div>
   );
 }

@@ -35,6 +35,7 @@ class Meeting(SQLModel, table=True):
     meeting_type: str = Field(default="dormitory_general_assembly", nullable=False, index=True)
     meeting_scale: str = Field(default="small", nullable=False, index=True)
     minutes_scope_policy: str = Field(default="meeting", nullable=False, index=True)
+    organization_id: Optional[int] = Field(default=None, foreign_key="organizations.id", index=True, ondelete="SET NULL")
     created_by: int = Field(foreign_key="user.id", nullable=False, index=True, ondelete="RESTRICT")
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)

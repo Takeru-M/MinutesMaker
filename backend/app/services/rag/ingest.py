@@ -43,7 +43,7 @@ class SourceDocument:
 
 @dataclass
 class IngestResult:
-    meeting_id: int
+    meeting_id: int | None
     indexed_sources: int
     indexed_chunks: int
     skipped_sources: int
@@ -60,12 +60,53 @@ def ingest_meeting_knowledge(session: Session, meeting_id: int) -> IngestResult:
 
     _ensure_collection()
 
+    indexed_sources, indexed_chunks, skipped_sources = _ingest_documents(
+        session, documents, meeting_id=meeting_id, org_id=None
+    )
+    session.commit()
+
+    return IngestResult(
+        meeting_id=meeting_id,
+        indexed_sources=indexed_sources,
+        indexed_chunks=indexed_chunks,
+        skipped_sources=skipped_sources,
+    )
+
+
+def ingest_global_knowledge(session: Session) -> IngestResult:
+    """Index content/notice/attachments as org-wide sources (meeting_id=None)."""
+    documents = _collect_global_documents(session)
+    if not documents:
+        return IngestResult(meeting_id=None, indexed_sources=0, indexed_chunks=0, skipped_sources=0)
+
+    _ensure_collection()
+
+    indexed_sources, indexed_chunks, skipped_sources = _ingest_documents(
+        session, documents, meeting_id=None, org_id=None
+    )
+    session.commit()
+
+    return IngestResult(
+        meeting_id=None,
+        indexed_sources=indexed_sources,
+        indexed_chunks=indexed_chunks,
+        skipped_sources=skipped_sources,
+    )
+
+
+def _ingest_documents(
+    session: Session,
+    documents: list[SourceDocument],
+    *,
+    meeting_id: int | None,
+    org_id: int | None,
+) -> tuple[int, int, int]:
     indexed_sources = 0
     indexed_chunks = 0
     skipped_sources = 0
 
     for document in documents:
-        source, changed = _upsert_source(session, meeting_id=meeting_id, document=document)
+        source, changed = _upsert_source(session, meeting_id=meeting_id, org_id=org_id, document=document)
         if not changed:
             skipped_sources += 1
             continue
@@ -91,17 +132,11 @@ def ingest_meeting_knowledge(session: Session, meeting_id: int) -> IngestResult:
         indexed_sources += 1
         indexed_chunks += len(chunks)
 
-    session.commit()
-
-    return IngestResult(
-        meeting_id=meeting_id,
-        indexed_sources=indexed_sources,
-        indexed_chunks=indexed_chunks,
-        skipped_sources=skipped_sources,
-    )
+    return indexed_sources, indexed_chunks, skipped_sources
 
 
 def _collect_meeting_documents(session: Session, meeting: Meeting) -> list[SourceDocument]:
+    """Collect documents specific to a single meeting (meeting, agenda, minutes)."""
     documents: list[SourceDocument] = []
 
     meeting_text = "\n".join(
@@ -213,11 +248,18 @@ def _collect_meeting_documents(session: Session, meeting: Meeting) -> list[Sourc
                 )
             )
 
+    return documents
+
+
+def _collect_global_documents(session: Session) -> list[SourceDocument]:
+    """Collect org-wide documents (content, content_attachment, notice) stored without meeting_id."""
+    documents: list[SourceDocument] = []
+
     contents = session.exec(
         select(Content)
         .where(Content.status == "published", Content.deleted_at.is_(None))
         .order_by(Content.created_at.desc())
-        .limit(200)
+        .limit(settings.rag_content_ingest_limit)
     ).all()
 
     for content in contents:
@@ -248,7 +290,7 @@ def _collect_meeting_documents(session: Session, meeting: Meeting) -> list[Sourc
         .join(Content, ContentAttachment.content_id == Content.id)
         .where(Content.status == "published", Content.deleted_at.is_(None))
         .order_by(ContentAttachment.updated_at.desc())
-        .limit(300)
+        .limit(settings.rag_attachment_ingest_limit)
     ).all()
 
     for attachment in attachments:
@@ -271,7 +313,7 @@ def _collect_meeting_documents(session: Session, meeting: Meeting) -> list[Sourc
         select(Notice)
         .where(Notice.status == "published", Notice.deleted_at.is_(None))
         .order_by(Notice.published_at.desc(), Notice.created_at.desc())
-        .limit(200)
+        .limit(settings.rag_notice_ingest_limit)
     ).all()
 
     for notice in notices:
@@ -334,7 +376,8 @@ def _load_pdf_documents(
 def _upsert_source(
     session: Session,
     *,
-    meeting_id: int,
+    meeting_id: int | None,
+    org_id: int | None,
     document: SourceDocument,
 ) -> tuple[MeetingKnowledgeSource, bool]:
     content_hash = sha256(document.text.encode("utf-8")).hexdigest()
@@ -349,6 +392,7 @@ def _upsert_source(
     if source is None:
         source = MeetingKnowledgeSource(
             meeting_id=meeting_id,
+            org_id=org_id,
             source_type=document.source_type,
             source_entity_id=document.source_entity_id,
             source_label=document.source_label,
@@ -374,7 +418,7 @@ def _upsert_source(
 def _replace_source_chunks(
     session: Session,
     *,
-    meeting_id: int,
+    meeting_id: int | None,
     source: MeetingKnowledgeSource,
     source_type: str,
     source_entity_id: int,
@@ -419,20 +463,17 @@ def _replace_source_chunks(
         if chunk.id is None:
             raise ValueError("Chunk not persisted")
 
-        points.append(
-            {
-                "id": vector_id,
-                "vector": vector,
-                "payload": {
-                    "meeting_id": meeting_id,
-                    "source_id": source_id,
-                    "chunk_id": chunk.id,
-                    "source_type": source_type,
-                    "source_entity_id": source_entity_id,
-                    "chunk_index": idx,
-                },
-            }
-        )
+        payload: dict = {
+            "source_id": source_id,
+            "chunk_id": chunk.id,
+            "source_type": source_type,
+            "source_entity_id": source_entity_id,
+            "chunk_index": idx,
+        }
+        if meeting_id is not None:
+            payload["meeting_id"] = meeting_id
+
+        points.append({"id": vector_id, "vector": vector, "payload": payload})
 
     if points:
         qdrant.upsert(collection_name=collection_name, points=points, wait=True)

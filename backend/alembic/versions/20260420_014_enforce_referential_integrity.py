@@ -523,7 +523,7 @@ def downgrade() -> None:
     op.create_foreign_key("fk_agendas_meeting", "agendas", "meetings", ["meeting_id"], ["id"])
 
     # Add back denormalized columns to agendas
-    op.add_column("agendas", sa.Column("meeting_type", sa.String(), nullable=False, server_default="large"))
+    op.add_column("agendas", sa.Column("meeting_type", sa.String(255), nullable=False, server_default="large"))
     op.add_column("agendas", sa.Column("meeting_date", sa.Date(), nullable=False, server_default=sa.func.curdate()))
 
     op.create_check_constraint(

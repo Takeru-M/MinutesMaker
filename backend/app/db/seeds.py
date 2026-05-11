@@ -37,6 +37,7 @@ def seed_roles_and_permissions(db: Session) -> None:
     roles: dict[str, Role] = {}
     permissions: dict[str, Permission] = {}
 
+    # Create roles from ROLE_DEFINITIONS
     for role_def in ROLE_DEFINITIONS:
         role = db.exec(select(Role).where(Role.name == role_def["name"])).first()
         if role is None:
@@ -45,6 +46,7 @@ def seed_roles_and_permissions(db: Session) -> None:
             db.flush()
         roles[role.name] = role
 
+    # Create permissions
     for name, resource_type, action, description in PERMISSION_DEFINITIONS:
         permission = db.exec(select(Permission).where(Permission.name == name)).first()
         if permission is None:
@@ -58,10 +60,36 @@ def seed_roles_and_permissions(db: Session) -> None:
             db.flush()
         permissions[permission.name] = permission
 
+    # Bind permissions to roles
     for role_name, permission_names in ROLE_PERMISSION_ASSIGNMENTS.items():
         role = roles.get(role_name)
         if role is not None:
             _bind_role_permissions(db, role, permissions, permission_names)
+
+    # Handle backward compatibility: bind legacy role names to same permissions as their canonical roles
+    # admin -> platform_admin, user -> org_user
+    legacy_role_mapping = {
+        LEGACY_ROLE_ADMIN: ROLE_ADMIN,
+        LEGACY_ROLE_USER: ROLE_ORG_USER,
+    }
+    for legacy_role_name, canonical_role_name in legacy_role_mapping.items():
+        legacy_role = db.exec(select(Role).where(Role.name == legacy_role_name)).first()
+        if legacy_role is None:
+            # Create legacy role with same description as canonical role
+            canonical_role_def = next(
+                (rd for rd in ROLE_DEFINITIONS if rd["name"] == canonical_role_name),
+                None,
+            )
+            if canonical_role_def:
+                legacy_role = Role(name=legacy_role_name, description=canonical_role_def["description"])
+                db.add(legacy_role)
+                db.flush()
+                roles[legacy_role_name] = legacy_role
+
+        # Bind same permissions as canonical role
+        if legacy_role is not None:
+            permission_names = ROLE_PERMISSION_ASSIGNMENTS.get(canonical_role_name, frozenset())
+            _bind_role_permissions(db, legacy_role, permissions, permission_names)
 
     db.commit()
 
@@ -83,7 +111,7 @@ def seed_sample_users(db: Session) -> None:
         {
             "username": "org-user-a",
             "password": "Password123!",
-            "role": ROLE_USER,
+            "role": ROLE_ORG_USER,
             "full_name": "Organization User A",
         },
         {
@@ -107,7 +135,7 @@ def seed_sample_users(db: Session) -> None:
         {
             "username": "multi-org-user",
             "password": "Password123!",
-            "role": ROLE_USER,
+            "role": ROLE_ORG_USER,
             "full_name": "Multi Organization User",
         },
     )

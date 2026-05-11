@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Footer, Header, PageHero } from "@/components/layout";
 import { Container } from "@/components/ui/container";
 import { useI18n } from "@/features/i18n";
+import { ADMIN_ROLES } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import styles from "./admin-feature-page-shell.module.css";
 
@@ -25,8 +26,6 @@ type AdminFeaturePageShellProps = {
   sectionTitle: string;
   items: AdminFeaturePageItem[];
 };
-
-const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 export function AdminFeaturePageShell({
   redirectPath,

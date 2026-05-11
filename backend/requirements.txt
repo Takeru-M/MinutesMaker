@@ -22,3 +22,5 @@ langchain-openai
 langchain-qdrant
 qdrant-client
 tiktoken
+redis
+rq

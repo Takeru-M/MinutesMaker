@@ -20,9 +20,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.drop_constraint("uq_minutes_scope_entity", "minutes", type_="unique")
-    op.add_column("minutes", sa.Column("content_type", sa.String(), nullable=False, server_default="text"))
-    op.add_column("minutes", sa.Column("pdf_s3_key", sa.String(), nullable=True))
-    op.add_column("minutes", sa.Column("pdf_url", sa.String(), nullable=True))
+    op.add_column("minutes", sa.Column("content_type", sa.String(255), nullable=False, server_default="text"))
+    op.add_column("minutes", sa.Column("pdf_s3_key", sa.String(255), nullable=True))
+    op.add_column("minutes", sa.Column("pdf_url", sa.String(255), nullable=True))
     op.create_index(op.f("ix_minutes_content_type"), "minutes", ["content_type"], unique=False)
 
 

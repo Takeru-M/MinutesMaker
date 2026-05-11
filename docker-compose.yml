@@ -37,9 +37,33 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
     # environment:
     #   DATABASE_URL: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_DATABASE}
     #   APP_ENV: development
+
+  backend_worker:
+    build:
+      context: .
+      dockerfile: Docker/backend/Dockerfile
+    container_name: minutes_backend_worker
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+    networks:
+      - app-network
+    command: sh -c "pip install --no-cache-dir -r /app/requirements.txt && python -m app.workers.rq_worker"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
 
   db:
     image: mysql:8.0
@@ -104,10 +128,23 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    container_name: minutes_redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
 volumes:
   db_data:
   db_test_data:
   qdrant_data:
+  redis_data:
 
 networks:
   app-network:

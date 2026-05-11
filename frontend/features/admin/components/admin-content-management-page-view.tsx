@@ -14,10 +14,11 @@ import type {
   ContentStatus,
   ContentWriteRequest,
 } from "@/lib/api-types";
+import { useI18n } from "@/features/i18n";
+import { formatJaDate, formatJaDateTime } from "@/lib/date-formatter";
+import { ADMIN_ROLES } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import styles from "./admin-content-management-page-view.module.css";
-
-const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 type ContentType = "repository" | "guide";
 
@@ -71,38 +72,6 @@ const EMPTY_FORM: ContentFormState = {
   content: "",
   status: "draft",
 };
-
-function formatDateTime(value: string | null | undefined): string {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
 
 function readErrorMessage(response: Response, fallback: string): Promise<string> {
   return response
@@ -163,6 +132,7 @@ export function AdminContentManagementPageView({
 }: AdminContentManagementPageViewProps) {
   const router = useRouter();
   const auth = useAppSelector((state) => state.auth);
+  const { t } = useI18n();
   const [items, setItems] = useState<ContentItemResponse[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
@@ -439,7 +409,7 @@ export function AdminContentManagementPageView({
         <main className={styles.main}>
           <div className={styles.breadcrumb}>
             <Link href="/admin/features" className={styles.breadcrumbLink}>
-              管理者機能一覧
+              {t("adminFeatureCommon.featureList")}
             </Link>
             <span className={styles.breadcrumbCurrent}>/ {title}</span>
           </div>
@@ -496,7 +466,7 @@ export function AdminContentManagementPageView({
                           <tr key={item.db_id}>
                             <td>{item.title}</td>
                             <td>{item.author}</td>
-                            <td>{formatDate(item.date)}</td>
+                            <td>{formatJaDate(item.date)}</td>
                             <td>
                               <span className={`${styles.statusBadge} ${statusBadgeClass("published")}`}>公開中</span>
                             </td>
@@ -544,7 +514,7 @@ export function AdminContentManagementPageView({
                       </p>
                     </div>
                     <div className={styles.detailMetaGroup}>
-                      <span>{`${updatedAtLabel}：${formatDateTime(selectedDetail.updated_at)}`}</span>
+                      <span>{`${updatedAtLabel}：${formatJaDateTime(selectedDetail.updated_at)}`}</span>
                       <span>{`${selectedAttachmentsLabel}：${selectedDetail.attachments.length}`}</span>
                       <span>{`${statusLabel}：${statusLabelFromState(selectedDetail.status)}`}</span>
                     </div>

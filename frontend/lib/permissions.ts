@@ -1,5 +1,7 @@
 import { AuthRole } from "@/features/auth/types/auth-role";
 
+export const ADMIN_ROLES = new Set<AuthRole>(["platform_admin", "org_admin", "admin"]);
+
 /**
  * Permission definitions matching backend PERMISSION_DEFINITIONS
  */

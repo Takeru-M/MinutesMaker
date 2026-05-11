@@ -12,7 +12,7 @@ import { meetingScheduleItems } from "@/features/meeting-schedule/data/meeting-s
 import { MeetingScheduleItem } from "@/features/meeting-schedule/types/meeting-schedule-item";
 import { filterMeetingScheduleItems } from "@/features/meeting-schedule/utils/filter-meeting-schedule-items";
 import type { MeetingListItemResponse } from "@/lib/api-types";
-import { apiFetch } from "@/lib/api-client";
+import { API_QUERY_LIMIT, apiFetch } from "@/lib/api-client";
 import styles from "./meeting-schedule-view.module.css";
 
 type MeetingScheduleListItem = {
@@ -45,7 +45,7 @@ export function MeetingScheduleView() {
   useEffect(() => {
     const fetchMeetings = async () => {
       try {
-        const response = await apiFetch("/api/v1/meetings?limit=500");
+        const response = await apiFetch(`/api/v1/meetings?limit=${API_QUERY_LIMIT}`);
         if (!response.ok) {
           return;
         }

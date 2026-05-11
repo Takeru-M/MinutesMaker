@@ -685,4 +685,25 @@ export const jaMessages: TranslationNode = {
     deleteConfirm: "この議事録を削除しますか？この操作は元に戻せません。",
     deleteFailed: "議事録の削除に失敗しました。もう一度お試しください。",
   },
+  assistant: {
+    title: "AI アシスタント",
+    toggle: "AIアシスタント",
+    placeholder: "質問を入力してください",
+    send: "送信",
+    loading: {
+      processing: "処理中...",
+    },
+    emptyState: "会議に関する質問をしてください",
+    scope: {
+      label: "検索範囲",
+      meetingOnly: "この会議のみ",
+      crossMeeting: "複数の会議",
+      global: "全体",
+    },
+    confidence: "信頼度",
+    citations: "引用",
+    errors: {
+      meetingRequired: "この検索モードでは会議を指定してください",
+    },
+  },
 };

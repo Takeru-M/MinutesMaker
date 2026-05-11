@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.add_column(
         "meetings",
-        sa.Column("meeting_type", sa.String(), nullable=False, server_default="large"),
+        sa.Column("meeting_type", sa.String(255), nullable=False, server_default="large"),
     )
     op.create_check_constraint(
         "ck_meetings_type",
@@ -35,7 +35,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("source_agenda_id", sa.Integer(), nullable=False),
         sa.Column("target_agenda_id", sa.Integer(), nullable=False),
-        sa.Column("relation_type", sa.String(), nullable=False),
+        sa.Column("relation_type", sa.String(255), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.CheckConstraint(
             "relation_type IN ('past_block', 'other_reference')",

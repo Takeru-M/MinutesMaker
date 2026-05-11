@@ -20,12 +20,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.add_column("agendas", sa.Column("meeting_date", sa.Date(), nullable=True))
-    op.add_column("agendas", sa.Column("meeting_type", sa.String(), nullable=True))
-    op.add_column("agendas", sa.Column("responsible", sa.String(), nullable=True))
+    op.add_column("agendas", sa.Column("meeting_type", sa.String(255), nullable=True))
+    op.add_column("agendas", sa.Column("responsible", sa.String(255), nullable=True))
     op.add_column("agendas", sa.Column("agenda_types", sa.JSON(), nullable=True))
     op.add_column("agendas", sa.Column("voting_items", sa.Text(), nullable=True))
-    op.add_column("agendas", sa.Column("pdf_s3_key", sa.String(), nullable=True))
-    op.add_column("agendas", sa.Column("pdf_url", sa.String(), nullable=True))
+    op.add_column("agendas", sa.Column("pdf_s3_key", sa.String(255), nullable=True))
+    op.add_column("agendas", sa.Column("pdf_url", sa.String(255), nullable=True))
 
     op.execute(
         """

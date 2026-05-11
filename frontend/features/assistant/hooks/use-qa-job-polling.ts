@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import type { MeetingQAJobStatus } from "@/lib/api-types-assistant";
 import { getMeetingQAJobStatus } from "@/lib/api-client";
 
@@ -25,39 +25,37 @@ export function useQAJobPolling({
   const [result, setResult] = useState<object | null>(null);
   const [interval, setInterval] = useState(initialInterval);
 
-  const poll = useCallback(async () => {
-    if (!jobId) return;
-
-    try {
-      setIsLoading(true);
-      const data = await getMeetingQAJobStatus(jobId);
-
-      setStatus(data.status as MeetingQAJobStatus);
-
-      if (data.error) {
-        setError(data.error);
-        onError?.(data.error);
-      }
-
-      if (data.status === "finished" && data.result) {
-        setResult(data.result);
-        onComplete?.(data.result);
-      } else if (data.status === "failed") {
-        const errorMsg = data.error || "Job failed";
-        setError(errorMsg);
-        onError?.(errorMsg);
-      }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Polling failed";
-      setError(errorMsg);
-      onError?.(errorMsg);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [jobId, onComplete, onError]);
-
   useEffect(() => {
     if (!jobId) return;
+
+    const poll = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getMeetingQAJobStatus(jobId);
+
+        setStatus(data.status as MeetingQAJobStatus);
+
+        if (data.error) {
+          setError(data.error);
+          onError?.(data.error);
+        }
+
+        if (data.status === "finished" && data.result) {
+          setResult(data.result);
+          onComplete?.(data.result);
+        } else if (data.status === "failed") {
+          const errorMsg = data.error || "Job failed";
+          setError(errorMsg);
+          onError?.(errorMsg);
+        }
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Polling failed";
+        setError(errorMsg);
+        onError?.(errorMsg);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     // Poll immediately on mount
     poll();
@@ -71,7 +69,7 @@ export function useQAJobPolling({
     }, interval);
 
     return () => clearInterval(pollInterval);
-  }, [jobId, poll, interval, maxInterval]);
+  }, [jobId, onComplete, onError, interval, maxInterval]);
 
   return {
     status,

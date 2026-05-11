@@ -6,7 +6,6 @@ from sqlmodel import Session
 from app.core.auth_dependencies import require_permissions
 from app.core.job_queue import get_ingest_queue, get_qa_queue
 from app.core.redis_client import get_redis
-from app.crud.meeting import get_meeting_by_id
 from app.db.session import get_session
 from app.schemas.meeting_qa import (
     AssistantQAJobEnqueueResponse,
@@ -82,9 +81,6 @@ def enqueue_meeting_qa_job_endpoint(
     db: Session = Depends(get_session),
     current_user=Depends(require_permissions("meeting.qa.ask")),
 ) -> AssistantQAJobEnqueueResponse:
-    if get_meeting_by_id(db, meeting_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
-
     queue = get_qa_queue()
     job = queue.enqueue(
         "app.workers.tasks.run_assistant_qa_job",
@@ -113,9 +109,6 @@ def enqueue_meeting_ingest_job_endpoint(
     db: Session = Depends(get_session),
     current_user=Depends(require_permissions("meeting.qa.ingest")),
 ) -> AssistantQAJobEnqueueResponse:
-    if get_meeting_by_id(db, meeting_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
-
     queue = get_ingest_queue()
     job = queue.enqueue(
         "app.workers.tasks.run_meeting_ingest_job",

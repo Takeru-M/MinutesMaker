@@ -85,7 +85,7 @@ export async function enqueueMeetingQAJob(
  * Get QA job status
  */
 export async function getMeetingQAJobStatus(jobId: string) {
-  const response = await apiFetch(`/api/v1/qa/jobs/${jobId}`);
+  const response = await apiFetch(`/api/v1/meetings/qa/jobs/${jobId}`);
 
   if (!response.ok) {
     throw new Error(`Failed to get job status: ${response.statusText}`);

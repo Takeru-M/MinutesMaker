@@ -6,6 +6,7 @@ from sqlmodel import Session
 from app.core.auth_dependencies import require_permissions
 from app.core.job_queue import get_ingest_queue, get_qa_queue
 from app.core.redis_client import get_redis
+from app.crud.meeting import get_meeting_by_id
 from app.db.session import get_session
 from app.schemas.meeting_qa import (
     AssistantQAJobEnqueueResponse,
@@ -16,7 +17,6 @@ from app.schemas.meeting_qa import (
     MeetingQACitationResponse,
     MeetingQARelatedSourceResponse,
 )
-from app.services.meeting_access import can_access_meeting
 from app.services.rag.graph import answer_question_graph
 from app.services.rag.ingest import ingest_meeting_knowledge
 
@@ -39,10 +39,6 @@ def _assert_job_access(*, db: Session, job: object, current_user) -> None:
 
     requested_by = job_meta.get("requested_by")
     if requested_by is not None and requested_by != (current_user.id or 0) and current_user.role not in ADMIN_ROLES:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-
-    meeting_id = job_meta.get("meeting_id")
-    if isinstance(meeting_id, int) and not can_access_meeting(db, meeting_id=meeting_id, user=current_user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 
@@ -86,8 +82,8 @@ def enqueue_meeting_qa_job_endpoint(
     db: Session = Depends(get_session),
     current_user=Depends(require_permissions("meeting.qa.ask")),
 ) -> AssistantQAJobEnqueueResponse:
-    if not can_access_meeting(db, meeting_id=meeting_id, user=current_user):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    if get_meeting_by_id(db, meeting_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     queue = get_qa_queue()
     job = queue.enqueue(
@@ -117,8 +113,8 @@ def enqueue_meeting_ingest_job_endpoint(
     db: Session = Depends(get_session),
     current_user=Depends(require_permissions("meeting.qa.ingest")),
 ) -> AssistantQAJobEnqueueResponse:
-    if not can_access_meeting(db, meeting_id=meeting_id, user=current_user):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    if get_meeting_by_id(db, meeting_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     queue = get_ingest_queue()
     job = queue.enqueue(
@@ -185,9 +181,6 @@ def ingest_meeting_knowledge_endpoint(
     current_user=Depends(require_permissions("meeting.qa.ingest")),
 ) -> MeetingKnowledgeIngestResponse:
     try:
-        if not can_access_meeting(db, meeting_id=meeting_id, user=current_user):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-
         result = ingest_meeting_knowledge(db, meeting_id)
     except ValueError as exc:
         detail = str(exc)
@@ -213,9 +206,6 @@ def ask_meeting_question_endpoint(
     current_user=Depends(require_permissions("meeting.qa.ask")),
 ) -> AssistantQAResponse:
     try:
-        if not can_access_meeting(db, meeting_id=meeting_id, user=current_user):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-
         result = answer_question_graph(
             db,
             meeting_id=meeting_id,

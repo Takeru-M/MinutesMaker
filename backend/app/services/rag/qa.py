@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from time import perf_counter
 from typing import Literal
 
+from qdrant_client import models as qdrant_models
 from sqlmodel import Session, select
 
 from app.core.config import settings
@@ -14,6 +16,8 @@ from app.models.meeting import Meeting
 from app.models.meeting_knowledge import MeetingQALog
 from app.services.rag.clients import get_collection_name, get_openai_client, get_qdrant_client
 from app.services.rag.history import append_history, get_history
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -56,6 +60,7 @@ def classify_question(question: str, meeting_id: int | None) -> tuple[str, str]:
         else "特定の会議コンテキストはありません。"
     )
 
+    logger.debug(f"[classify] Calling LLM to classify question - meeting_id={meeting_id}, question={question[:50]}...")
     try:
         response = get_openai_client().chat.completions.create(
             model=settings.llm_model,
@@ -89,7 +94,9 @@ def classify_question(question: str, meeting_id: int | None) -> tuple[str, str]:
         )
         raw = response.choices[0].message.content or "{}"
         data = json.loads(raw)
-    except Exception:
+        logger.debug(f"[classify] LLM classification result - raw={raw}")
+    except Exception as exc:
+        logger.warning(f"[classify] LLM classification failed, using defaults - error={exc}", exc_info=True)
         data = {}
 
     intent = data.get("intent", "lookup")
@@ -112,9 +119,16 @@ def _embed_question(question: str) -> list[float]:
     return response.data[0].embedding
 
 
-def _build_query_filter(*, meeting_id: int | None, scope: str) -> dict | None:
+def _build_query_filter(*, meeting_id: int | None, scope: str) -> qdrant_models.Filter | None:
     if scope == "meeting_only" and meeting_id is not None:
-        return {"must": [{"key": "meeting_id", "match": {"value": meeting_id}}]}
+        return qdrant_models.Filter(
+            must=[
+                qdrant_models.FieldCondition(
+                    key="meeting_id",
+                    match=qdrant_models.MatchValue(value=meeting_id),
+                )
+            ]
+        )
     return None
 
 
@@ -299,7 +313,9 @@ def build_answer(
             related_sources=related_sources,
         )
 
+    logger.debug(f"[build_answer] Calling LLM for answer - model={settings.llm_model}, context_blocks={len(context_blocks)}, citations={len(citations)}")
     meeting_context_line = f"会議ID: {meeting_id}\n" if meeting_id is not None else ""
+    llm_start = perf_counter()
     response = get_openai_client().chat.completions.create(
         model=settings.llm_model,
         temperature=0.1,
@@ -326,6 +342,7 @@ def build_answer(
     )
 
     answer = (response.choices[0].message.content or "").strip() or "回答を生成できませんでした。"
+    logger.debug(f"[build_answer] LLM responded - latency={int((perf_counter() - llm_start) * 1000)}ms, answer_length={len(answer)}")
     usage = response.usage
     _save_qa_log(
         session,

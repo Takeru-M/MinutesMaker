@@ -23,9 +23,7 @@ export function useQAJobPolling({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<object | null>(null);
-  const [interval, setInterval] = useState(initialInterval);
 
-  // Keep latest callbacks in refs to avoid dependency array issues
   const onCompleteRef = useRef(onComplete);
   const onErrorRef = useRef(onError);
 
@@ -41,34 +39,46 @@ export function useQAJobPolling({
     if (!jobId) return;
 
     let isMounted = true;
+    let currentDelay = initialInterval;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
 
     const poll = async () => {
       if (!isMounted) return;
 
       try {
         setIsLoading(true);
+        console.debug(`[STEP 4] Polling job status - job_id=${jobId}, delay=${currentDelay}ms`);
         const data = await getMeetingQAJobStatus(jobId);
 
         if (!isMounted) return;
 
         setStatus(data.status as MeetingQAJobStatus);
+        console.debug(`[STEP 4] Job status received - job_id=${jobId}, status=${data.status}`);
 
         if (data.error) {
+          console.error(`[STEP 4] Job error - job_id=${jobId}, error=${data.error}`);
           setError(data.error);
           onErrorRef.current?.(data.error);
         }
 
-        if (data.status === "finished" && data.result) {
-          setResult(data.result);
-          onCompleteRef.current?.(data.result);
+        const jobResult = (data as { qa_result?: object; ingest_result?: object }).qa_result
+          ?? (data as { ingest_result?: object }).ingest_result;
+        if (data.status === "finished" && jobResult) {
+          console.debug(`[STEP 4] Job finished - job_id=${jobId}, calling onComplete callback`);
+          setResult(jobResult);
+          onCompleteRef.current?.(jobResult);
+          return;
         } else if (data.status === "failed") {
           const errorMsg = data.error || "Job failed";
+          console.error(`[STEP 4] Job failed - job_id=${jobId}, error=${errorMsg}`);
           setError(errorMsg);
           onErrorRef.current?.(errorMsg);
+          return;
         }
       } catch (err) {
         if (!isMounted) return;
         const errorMsg = err instanceof Error ? err.message : "Polling failed";
+        console.error(`[ERROR] Polling error - job_id=${jobId}, error=${errorMsg}`);
         setError(errorMsg);
         onErrorRef.current?.(errorMsg);
       } finally {
@@ -76,29 +86,22 @@ export function useQAJobPolling({
           setIsLoading(false);
         }
       }
+
+      if (isMounted) {
+        currentDelay = Math.min(currentDelay * 1.5, maxInterval);
+        console.debug(`[STEP 4] Scheduling next poll - delay=${currentDelay}ms`);
+        timerId = setTimeout(poll, currentDelay);
+      }
     };
 
-    // Poll immediately on mount
+    console.debug(`[STEP 4] Starting polling - job_id=${jobId}`);
     poll();
-
-    // Set up polling interval
-    const pollInterval = setInterval(async () => {
-      await poll();
-
-      // Increase interval up to maxInterval if status is queued/started
-      setInterval((prev) => (prev < maxInterval ? Math.min(prev * 1.5, maxInterval) : maxInterval));
-    }, interval);
 
     return () => {
       isMounted = false;
-      clearInterval(pollInterval);
+      if (timerId !== null) clearTimeout(timerId);
     };
-  }, [jobId, interval, maxInterval]);
+  }, [jobId, initialInterval, maxInterval]);
 
-  return {
-    status,
-    isLoading,
-    error,
-    result,
-  };
+  return { status, isLoading, error, result };
 }

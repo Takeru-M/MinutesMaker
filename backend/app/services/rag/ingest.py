@@ -49,22 +49,27 @@ class IngestResult:
     skipped_sources: int
 
 
-def ingest_meeting_knowledge(session: Session, meeting_id: int) -> IngestResult:
+def ingest_meeting_knowledge(session: Session, meeting_id: int, *, force: bool = False) -> IngestResult:
+    logger.info(f"[ingest] Starting meeting ingest - meeting_id={meeting_id}, force={force}")
     meeting = session.exec(select(Meeting).where(Meeting.id == meeting_id)).first()
     if meeting is None:
+        logger.error(f"[ingest] Meeting not found - meeting_id={meeting_id}")
         raise ValueError("Meeting not found")
 
     documents = _collect_meeting_documents(session, meeting)
+    logger.debug(f"[ingest] Collected documents - meeting_id={meeting_id}, count={len(documents)}")
     if not documents:
+        logger.warning(f"[ingest] No documents found for meeting - meeting_id={meeting_id}")
         return IngestResult(meeting_id=meeting_id, indexed_sources=0, indexed_chunks=0, skipped_sources=0)
 
     _ensure_collection()
 
     indexed_sources, indexed_chunks, skipped_sources = _ingest_documents(
-        session, documents, meeting_id=meeting_id, org_id=None
+        session, documents, meeting_id=meeting_id, org_id=None, force=force
     )
     session.commit()
 
+    logger.info(f"[ingest] Meeting ingest complete - meeting_id={meeting_id}, indexed_sources={indexed_sources}, indexed_chunks={indexed_chunks}, skipped_sources={skipped_sources}")
     return IngestResult(
         meeting_id=meeting_id,
         indexed_sources=indexed_sources,
@@ -73,19 +78,23 @@ def ingest_meeting_knowledge(session: Session, meeting_id: int) -> IngestResult:
     )
 
 
-def ingest_global_knowledge(session: Session) -> IngestResult:
+def ingest_global_knowledge(session: Session, *, force: bool = False) -> IngestResult:
     """Index content/notice/attachments as org-wide sources (meeting_id=None)."""
+    logger.info(f"[ingest] Starting global ingest - force={force}")
     documents = _collect_global_documents(session)
+    logger.debug(f"[ingest] Collected global documents - count={len(documents)}")
     if not documents:
+        logger.warning("[ingest] No global documents found")
         return IngestResult(meeting_id=None, indexed_sources=0, indexed_chunks=0, skipped_sources=0)
 
     _ensure_collection()
 
     indexed_sources, indexed_chunks, skipped_sources = _ingest_documents(
-        session, documents, meeting_id=None, org_id=None
+        session, documents, meeting_id=None, org_id=None, force=force
     )
     session.commit()
 
+    logger.info(f"[ingest] Global ingest complete - indexed_sources={indexed_sources}, indexed_chunks={indexed_chunks}, skipped_sources={skipped_sources}")
     return IngestResult(
         meeting_id=None,
         indexed_sources=indexed_sources,
@@ -100,13 +109,14 @@ def _ingest_documents(
     *,
     meeting_id: int | None,
     org_id: int | None,
+    force: bool = False,
 ) -> tuple[int, int, int]:
     indexed_sources = 0
     indexed_chunks = 0
     skipped_sources = 0
 
     for document in documents:
-        source, changed = _upsert_source(session, meeting_id=meeting_id, org_id=org_id, document=document)
+        source, changed = _upsert_source(session, meeting_id=meeting_id, org_id=org_id, document=document, force=force)
         if not changed:
             skipped_sources += 1
             continue
@@ -379,6 +389,7 @@ def _upsert_source(
     meeting_id: int | None,
     org_id: int | None,
     document: SourceDocument,
+    force: bool = False,
 ) -> tuple[MeetingKnowledgeSource, bool]:
     content_hash = sha256(document.text.encode("utf-8")).hexdigest()
     source = get_source_by_entity(
@@ -404,7 +415,7 @@ def _upsert_source(
         create_source(session, source)
         return source, True
 
-    if source.content_hash == content_hash:
+    if not force and source.content_hash == content_hash:
         return source, False
 
     source.source_label = document.source_label

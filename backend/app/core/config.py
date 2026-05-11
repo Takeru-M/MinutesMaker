@@ -38,6 +38,7 @@ def _getenv_any(*keys: str, default: str = "") -> str:
 class Settings:
     app_name: str = os.getenv("APP_NAME", "MinutesMaker Backend")
     app_env: str = os.getenv("APP_ENV", "development")
+    debug: bool = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
     database_url: str = os.getenv(
         "DATABASE_URL",
         "mysql+pymysql://app_user:app_password@db:3306/minutesmaker",

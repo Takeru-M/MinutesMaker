@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -v \":0$\")"
+      "Bash(grep -v \":0$\")",
+      "Bash(python -m pytest tests/test_qa_agent.py::TestRerankerNode -v)",
+      "Bash(docker restart *)",
+      "Bash(docker exec *)"
     ]
   }
 }

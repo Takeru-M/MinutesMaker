@@ -82,6 +82,25 @@ export async function enqueueMeetingQAJob(
 }
 
 /**
+ * Enqueue a global (cross-meeting) QA job (async)
+ */
+export async function enqueueGlobalQAJob(payload: { question: string }) {
+  const response = await apiFetch(`/api/v1/meetings/qa/global/async`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to enqueue global QA job: ${response.statusText}`);
+  }
+
+  return response.json() as Promise<{ job_id: string; status: string; job_type: string }>;
+}
+
+/**
  * Get QA job status
  */
 export async function getMeetingQAJobStatus(jobId: string) {
@@ -94,8 +113,9 @@ export async function getMeetingQAJobStatus(jobId: string) {
   return response.json() as Promise<{
     job_id: string;
     status: string;
-    progress?: number;
-    result?: object | null;
+    job_type: string;
+    qa_result?: object | null;
+    ingest_result?: object | null;
     error?: string | null;
   }>;
 }

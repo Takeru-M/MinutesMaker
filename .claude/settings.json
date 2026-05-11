@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose *)",
+      "Bash(curl -s http://localhost:6333/collections)",
+      "Bash(curl -s \"https://4c1d6f88-61d1-455e-9190-d143f8e75801.us-west-1-0.aws.cloud.qdrant.io/\")"
+    ]
+  }
+}

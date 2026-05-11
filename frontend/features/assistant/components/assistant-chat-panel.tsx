@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@/features/assistant/types/chat-types";
 import type { MeetingQAResponse } from "@/lib/api-types-assistant";
 import { useQAJobPolling } from "@/features/assistant/hooks/use-qa-job-polling";
-import { enqueueMeetingQAJob } from "@/lib/api-client";
+import { enqueueMeetingQAJob, enqueueGlobalQAJob } from "@/lib/api-client";
 import { useI18n } from "@/features/i18n";
 import styles from "./assistant-chat-panel.module.css";
 
@@ -62,31 +62,42 @@ export function AssistantChatPanel({ meetingId, isOpen, onClose }: AssistantChat
     resizeStart.current = { x: e.clientX, y: e.clientY, ...size };
   };
 
-  const handleQAComplete = useCallback((result: object) => {
-    setMessages((prev) => {
-      const updated = [...prev];
-      const last = updated[updated.length - 1];
-      if (last?.jobId === currentJobId) {
-        last.qaResult = result as MeetingQAResponse;
-        last.isLoading = false;
-      }
-      return updated;
-    });
-    setCurrentJobId(null);
+  const currentJobIdRef = useRef(currentJobId);
+  useEffect(() => {
+    currentJobIdRef.current = currentJobId;
   }, [currentJobId]);
 
-  const handleQAError = useCallback((errorMsg: string) => {
+  const handleQAComplete = useCallback((result: object) => {
+    console.debug("[STEP 6] QA job completed:", result);
     setMessages((prev) => {
       const updated = [...prev];
       const last = updated[updated.length - 1];
-      if (last?.jobId === currentJobId) {
-        last.error = errorMsg;
+      if (last?.jobId === currentJobIdRef.current) {
+        last.qaResult = result as MeetingQAResponse;
         last.isLoading = false;
+        console.debug("[STEP 7] Answer added to chat message");
       }
       return updated;
     });
     setCurrentJobId(null);
-  }, [currentJobId]);
+  }, []);
+
+  const handleQAError = useCallback((rawError: string) => {
+    void rawError;
+    console.error("[ERROR] QA job failed:", rawError);
+    const friendlyMsg = t("assistant.error.jobFailed") || "回答の生成に失敗しました。しばらく待ってから再度お試しください。";
+    setMessages((prev) => {
+      const updated = [...prev];
+      const last = updated[updated.length - 1];
+      if (last?.jobId === currentJobIdRef.current) {
+        last.error = friendlyMsg;
+        last.isLoading = false;
+        last.content = friendlyMsg;
+      }
+      return updated;
+    });
+    setCurrentJobId(null);
+  }, [t]);
 
   const { isLoading: isPolling } = useQAJobPolling({
     jobId: currentJobId,
@@ -99,19 +110,23 @@ export function AssistantChatPanel({ meetingId, isOpen, onClose }: AssistantChat
     const question = inputValue.trim();
     if (!question) return;
 
+    console.debug("[STEP 0] User submitted question:", question);
     setIsSubmitting(true);
     setError(null);
 
     try {
+      console.debug("[STEP 1] Adding user message to chat");
       setMessages((prev) => [
         ...prev,
         { id: `user-${Date.now()}`, role: "user", content: question, timestamp: Date.now() },
       ]);
       setInputValue("");
 
-      const { job_id } = await enqueueMeetingQAJob(meetingId || 0, {
-        question,
-      });
+      console.debug("[STEP 2] Enqueueing QA job");
+      const { job_id } = meetingId
+        ? await enqueueMeetingQAJob(meetingId, { question })
+        : await enqueueGlobalQAJob({ question });
+      console.debug("[STEP 2] Job enqueued with ID:", job_id);
 
       const assistantMsg: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -121,10 +136,13 @@ export function AssistantChatPanel({ meetingId, isOpen, onClose }: AssistantChat
         jobId: job_id,
         isLoading: true,
       };
+      console.debug("[STEP 3] Adding assistant loading message");
       setMessages((prev) => [...prev, assistantMsg]);
       setCurrentJobId(job_id);
+      console.debug("[STEP 3] Starting job polling for job_id:", job_id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to send question";
+      console.error("[ERROR] Failed to submit question:", msg);
       setError(msg);
       setMessages((prev) => [
         ...prev,

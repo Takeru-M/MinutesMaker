@@ -58,8 +58,11 @@ class TestRetrieveNode:
         mock_settings.openai_api_key = "test-key"
         mock_settings.rag_retrieval_top_k = 5
         mock_embed.return_value = [0.1, 0.2, 0.3]
-        mock_search_result = []
-        mock_qdrant.return_value.search.return_value = mock_search_result
+        # collection_exists must return True so the retrieval path is exercised
+        mock_qdrant.return_value.collection_exists.return_value = True
+        mock_points = MagicMock()
+        mock_points.points = []
+        mock_qdrant.return_value.query_points.return_value = mock_points
 
         state = {
             "question": "What is X?",
@@ -73,7 +76,7 @@ class TestRetrieveNode:
         assert "retrieval" in result
         assert result["retrieval"].query_vector == [0.1, 0.2, 0.3]
         assert result["retrieval"].retrieval_limit == 12  # max(5, 12)
-        mock_qdrant.return_value.search.assert_called_once()
+        mock_qdrant.return_value.query_points.assert_called_once()
 
     @patch("app.services.rag.graph.settings")
     @patch("app.services.rag.graph.get_qdrant_client")
@@ -231,6 +234,8 @@ class TestAnswerNode:
         """Test answer node builds and returns result."""
         mock_result = MagicMock(spec=qa_service.AnswerResult)
         mock_result.answer = "The action items are..."
+        mock_result.confidence = 0.9
+        mock_result.model_name = "gpt-4"
         mock_build_answer.return_value = mock_result
 
         session = MagicMock(spec=Session)
@@ -331,10 +336,13 @@ class TestFallbackAnswer:
         mock_classify.return_value = ("lookup", "meeting_only")
         mock_embed.return_value = [0.1, 0.2]
 
-        # First search (meeting-only) returns results but reranking filters them all
-        mock_qdrant.return_value.search.return_value = []
+        # collection_exists → True so retrieval runs
+        mock_qdrant.return_value.collection_exists.return_value = True
+        mock_points = MagicMock()
+        mock_points.points = []
+        mock_qdrant.return_value.query_points.return_value = mock_points
 
-        # Reranking returns empty
+        # Reranking returns empty → triggers scope expansion → second query_points call
         mock_rerank.return_value = []
 
         mock_list_chunks.return_value = []
@@ -347,8 +355,8 @@ class TestFallbackAnswer:
         result = graph._fallback_answer(session, meeting_id=42, user_id=1, question="What is X?")
 
         assert result == mock_result
-        # Should call search twice: once for meeting_only, once for global
-        assert mock_qdrant.return_value.search.call_count == 2
+        # Should call query_points twice: once for meeting_only, once for global scope expansion
+        assert mock_qdrant.return_value.query_points.call_count == 2
 
 
 class TestAnswerQuestionGraph:

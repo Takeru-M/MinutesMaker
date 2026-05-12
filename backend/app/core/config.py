@@ -38,6 +38,7 @@ def _getenv_any(*keys: str, default: str = "") -> str:
 class Settings:
     app_name: str = os.getenv("APP_NAME", "MinutesMaker Backend")
     app_env: str = os.getenv("APP_ENV", "development")
+    debug: bool = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
     database_url: str = os.getenv(
         "DATABASE_URL",
         "mysql+pymysql://app_user:app_password@db:3306/minutesmaker",
@@ -74,10 +75,21 @@ class Settings:
     qdrant_api_key: str = _getenv_any("QDRANT_API_KEY")
     qdrant_collection_prefix: str = os.getenv("QDRANT_COLLECTION_PREFIX", "minutesmaker")
 
+    redis_url: str = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    redis_cache_ttl_seconds: int = int(os.getenv("REDIS_CACHE_TTL_SECONDS", "3600"))
+    redis_qa_cache_ttl_seconds: int = int(os.getenv("REDIS_QA_CACHE_TTL_SECONDS", "3600"))
+    redis_meeting_cache_ttl_seconds: int = int(os.getenv("REDIS_MEETING_CACHE_TTL_SECONDS", "120"))
+
+    qa_history_max_turns: int = int(os.getenv("QA_HISTORY_MAX_TURNS", "5"))
+    qa_history_ttl_seconds: int = int(os.getenv("QA_HISTORY_TTL_SECONDS", "7200"))
+
     rag_chunk_size: int = int(os.getenv("RAG_CHUNK_SIZE", "1000"))
     rag_chunk_overlap: int = int(os.getenv("RAG_CHUNK_OVERLAP", "150"))
     rag_retrieval_top_k: int = int(os.getenv("RAG_RETRIEVAL_TOP_K", "6"))
     rag_score_threshold: float = float(os.getenv("RAG_SCORE_THRESHOLD", "0.2"))
+    rag_content_ingest_limit: int = int(os.getenv("RAG_CONTENT_INGEST_LIMIT", "200"))
+    rag_notice_ingest_limit: int = int(os.getenv("RAG_NOTICE_INGEST_LIMIT", "200"))
+    rag_attachment_ingest_limit: int = int(os.getenv("RAG_ATTACHMENT_INGEST_LIMIT", "300"))
 
     pdf_max_upload_bytes: int = int(os.getenv("PDF_MAX_UPLOAD_BYTES", str(15 * 1024 * 1024)))
     notice_attachment_max_count: int = int(os.getenv("NOTICE_ATTACHMENT_MAX_COUNT", "3"))

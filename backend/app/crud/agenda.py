@@ -54,6 +54,15 @@ def get_agenda_by_id(db: Session, agenda_id: int) -> Agenda | None:
     return db.exec(stmt).first()
 
 
+def get_agenda_with_meeting_by_id(db: Session, agenda_id: int) -> tuple[Agenda, Meeting] | None:
+    stmt = (
+        select(Agenda, Meeting)
+        .join(Meeting, Agenda.meeting_id == Meeting.id)
+        .where(Agenda.id == agenda_id, Agenda.deleted_at.is_(None), Agenda.is_active.is_(True))
+    )
+    return db.exec(stmt).first()
+
+
 def get_related_agenda_ids(db: Session, *, agenda_id: int, relation_type: str) -> list[int]:
     stmt = (
         select(AgendaRelation.target_agenda_id)
@@ -108,8 +117,6 @@ def create_agenda(db: Session, *, payload: AgendaCreateRequest, user_id: int) ->
 
     agenda = Agenda(
         meeting_id=meeting.id,
-        meeting_date=meeting.scheduled_at.date(),
-        meeting_type=meeting.meeting_type,
         title=payload.title,
         responsible=payload.responsible or payload.description,
         description=payload.description,
@@ -178,8 +185,6 @@ def update_agenda(db: Session, *, agenda_id: int, payload: AgendaUpdateRequest, 
     agenda.pdf_s3_key = payload.pdf_s3_key
     agenda.pdf_url = normalized_pdf_url
     agenda.meeting_id = target_meeting_id
-    agenda.meeting_date = meeting.scheduled_at.date()
-    agenda.meeting_type = meeting.meeting_type
     if meeting_changed:
         agenda.order_no = _next_order_no(db, meeting_id=target_meeting_id)
     agenda.updated_by = user_id

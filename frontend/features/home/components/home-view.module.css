@@ -3,10 +3,11 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at 20% 10%, #dbeafe 0%, transparent 40%),
-    radial-gradient(circle at 80% 80%, #fde68a 0%, transparent 42%),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 20% 10%, var(--accent-soft) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 42%);
+  background-attachment: fixed;
   overflow: hidden;
 }
 
@@ -24,13 +25,13 @@
 .bgGlowTop {
   top: -140px;
   right: -80px;
-  background: #60a5fa;
+  background: var(--accent);
 }
 
 .bgGlowBottom {
   left: -120px;
   bottom: -160px;
-  background: #f59e0b;
+  background: rgba(139, 92, 246, 0.6);
 }
 
 .main {
@@ -46,11 +47,11 @@
 .contentGrid,
 .linksSection,
 .healthSection {
-  border: 1px solid #dbe2ea;
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
   backdrop-filter: blur(10px);
   border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-md);
 }
 
 .hero {
@@ -63,8 +64,8 @@
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 700;
-  color: #0f172a;
-  background: #e2e8f0;
+  color: var(--text-primary);
+  background: var(--surface-muted);
   margin-bottom: 14px;
 }
 
@@ -73,13 +74,13 @@
   font-size: clamp(1.6rem, 3.2vw, 2.4rem);
   line-height: 1.2;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .description {
   margin-top: 14px;
   max-width: 740px;
-  color: #1e293b;
+  color: var(--text-secondary);
   line-height: 1.8;
 }
 
@@ -88,7 +89,7 @@
   font-size: 0.8rem;
   letter-spacing: 0.08em;
   font-weight: 700;
-  color: #1d4ed8;
+  color: var(--accent);
 }
 
 .heroActions {
@@ -104,9 +105,9 @@
   gap: 2px;
   width: min(420px, 100%);
   border-radius: 12px;
-  border: 1px solid #bfdbfe;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  color: #1e3a8a;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
   text-decoration: none;
   padding: 12px 42px 12px 14px;
   box-shadow: 0 6px 14px rgba(59, 130, 246, 0.16);
@@ -115,7 +116,7 @@
 
 .meetingActionCard:hover {
   transform: translateY(-1px);
-  border-color: #93c5fd;
+  border-color: var(--accent);
   box-shadow: 0 10px 20px rgba(59, 130, 246, 0.22);
 }
 
@@ -126,7 +127,7 @@
 
 .meetingActionSub {
   font-size: 0.78rem;
-  color: #1d4ed8;
+  color: var(--accent);
 }
 
 .meetingActionArrow {
@@ -141,17 +142,17 @@
 .adminHintText {
   margin: 10px 0 0;
   font-size: 0.82rem;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .adminHintLink {
-  color: #2563eb;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
 }
 
 .adminHintLink:hover {
-  color: #1d4ed8;
+  color: var(--accent);
   text-decoration: underline;
 }
 
@@ -170,8 +171,8 @@
 
 .agendaBlock {
   border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #dbe2ea;
+  background: var(--surface);
+  border: 1px solid var(--border);
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -187,31 +188,31 @@
 .blockTitle {
   margin: 0;
   font-size: 1.2rem;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .inlineAction {
   text-decoration: none;
   font-size: 0.84rem;
-  color: #2563eb;
+  color: var(--accent);
   font-weight: 600;
 }
 
 .inlineAction:hover {
-  color: #1d4ed8;
+  color: var(--accent);
 }
 
 .blockDescription {
   margin: 10px 0 0;
-  color: #475569;
+  color: var(--text-secondary);
   line-height: 1.7;
 }
 
 .subBlock {
   margin-top: 16px;
   border-radius: 12px;
-  border: 1px solid #dbe2ea;
-  background: #f8fafc;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -221,7 +222,7 @@
 .subTitle {
   margin: 0;
   font-size: 1rem;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .agendaList {
@@ -235,19 +236,19 @@
 
 .agendaItem {
   border-radius: 10px;
-  border: 1px solid #dbe2ea;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  background: var(--surface);
   padding: 10px 12px;
 }
 
 .agendaLink {
   display: block;
   text-decoration: none;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .agendaLink:hover {
-  color: #2563eb;
+  color: var(--accent);
 }
 
 .agendaTitle {
@@ -259,7 +260,7 @@
   display: block;
   margin-top: 4px;
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .sideBlocks {
@@ -270,8 +271,8 @@
 
 .noticeCard {
   border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #dbe2ea;
+  background: var(--surface);
+  border: 1px solid var(--border);
   padding: 18px;
   grid-row: span 2;
 }
@@ -279,12 +280,12 @@
 .cardTitle {
   margin: 0;
   font-size: 1rem;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .cardText {
   margin-top: 8px;
-  color: #475569;
+  color: var(--text-secondary);
   line-height: 1.7;
 }
 
@@ -299,8 +300,8 @@
 
 .card {
   border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #dbe2ea;
+  background: var(--surface);
+  border: 1px solid var(--border);
   padding: 18px;
 }
 
@@ -312,7 +313,7 @@
 }
 
 .guideLink {
-  color: #475569;
+  color: var(--text-secondary);
   text-decoration: none;
   line-height: 1.7;
 }
@@ -328,7 +329,7 @@
 .linksTitle {
   margin: 0;
   font-size: 1.15rem;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .linksGrid {
@@ -340,17 +341,17 @@
 
 .linkItem {
   border-radius: 12px;
-  border: 1px solid #dbe2ea;
-  background: #ffffff;
-  color: #0f172a;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
   padding: 12px 14px;
   font-weight: 500;
 }
 
 .linkItem:hover {
-  border-color: #94a3b8;
-  color: #0f172a;
-  background: #f8fafc;
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  background: var(--surface-muted);
 }
 
 .healthSection {
@@ -362,15 +363,15 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: #1e293b;
-  color: #ffffff;
+  background: var(--text-primary);
+  color: var(--background);
   padding: 10px 14px;
   font-size: 0.92rem;
   font-weight: 600;
 }
 
 .healthLink:hover {
-  background: #1e293b;
+  background: var(--text-primary);
 }
 
 @media (max-width: 900px) {

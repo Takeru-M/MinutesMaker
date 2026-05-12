@@ -1,0 +1,332 @@
+erDiagram
+    user {
+        int id PK
+        string username "UK"
+        string password_hash
+        string role
+        bool is_active
+        string full_name
+        datetime created_at
+    }
+
+    roles {
+        int id PK
+        string name "UK"
+        string description
+        bool is_active
+        datetime created_at
+    }
+
+    permissions {
+        int id PK
+        string name "UK"
+        string resource_type
+        string action
+        string description
+        datetime created_at
+    }
+
+    user_roles {
+        int id PK
+        int user_id FK
+        int role_id FK
+        int assigned_by FK
+        datetime assigned_at
+        unique_constraint uq_user_roles_user_role "UK(user_id, role_id)"
+    }
+
+    role_permissions {
+        int id PK
+        int role_id FK
+        int permission_id FK
+        datetime created_at
+        unique_constraint uq_role_permissions_role_permission "UK(role_id, permission_id)"
+    }
+
+    organizations {
+        int id PK
+        string name "UK"
+        string slug "UK"
+        bool is_active
+        datetime created_at
+    }
+
+    organization_memberships {
+        int id PK
+        int user_id FK
+        int organization_id FK
+        int role_id FK
+        int assigned_by FK
+        bool is_primary
+        bool is_active
+        datetime assigned_at
+        unique_constraint uq_org_memberships_user_org "UK(user_id, organization_id)"
+    }
+
+    meetings {
+        int id PK
+        string title
+        string description
+        datetime scheduled_at
+        string location
+        string status
+        string meeting_type
+        string meeting_scale
+        string minutes_scope_policy
+        int created_by FK
+        datetime created_at
+        datetime updated_at
+    }
+
+    meeting_attendees {
+        int id PK
+        int meeting_id FK
+        int user_id FK
+        string status
+        datetime added_at
+        unique_constraint uq_meeting_attendees_meeting_user "UK(meeting_id, user_id)"
+    }
+
+    agendas {
+        int id PK
+        int meeting_id FK
+        string title
+        string responsible
+        string description
+        text content
+        string status
+        int priority
+        json agenda_types
+        text voting_items
+        string pdf_s3_key
+        string pdf_url
+        int order_no
+        bool is_active
+        int created_by FK
+        int updated_by FK
+        datetime created_at
+        datetime updated_at
+        datetime published_at
+        datetime deleted_at
+        unique_constraint uq_agendas_meeting_order "UK(meeting_id, order_no)"
+    }
+
+    agenda_relations {
+        int id PK
+        int source_agenda_id FK
+        int target_agenda_id FK
+        string relation_type
+        datetime created_at
+        unique_constraint uq_agenda_relations_source_target_type "UK(source_agenda_id, target_agenda_id, relation_type)"
+    }
+
+    agenda_attachments {
+        int id PK
+        int agenda_id FK
+        string file_name
+        string s3_key "UK"
+        int file_size
+        string mime_type
+        int order_no
+        datetime created_at
+        datetime updated_at
+    }
+
+    minutes {
+        int id PK
+        int meeting_id FK
+        int agenda_id FK
+        string scope_type
+        int scope_entity_id
+        string title
+        text body
+        string content_type
+        string pdf_s3_key
+        string pdf_url
+        string status
+        int created_by FK
+        int approved_by FK
+        datetime approved_at
+        datetime created_at
+        datetime updated_at
+        datetime published_at
+        datetime deleted_at
+    }
+
+    minute_revisions {
+        int id PK
+        int minutes_id FK
+        int version_no
+        text body
+        string change_reason
+        int changed_by FK
+        datetime changed_at
+        unique_constraint uq_minute_revisions_minutes_version "UK(minutes_id, version_no)"
+    }
+
+    notices {
+        int id PK
+        string title
+        text content
+        string status
+        string category
+        bool is_pinned
+        int created_by FK
+        int updated_by FK
+        datetime created_at
+        datetime updated_at
+        datetime published_at
+        datetime deleted_at
+    }
+
+    notice_attachments {
+        int id PK
+        int notice_id FK
+        string file_name
+        string s3_key "UK"
+        int file_size
+        string mime_type
+        int order_no
+        datetime created_at
+        datetime updated_at
+    }
+
+    contents {
+        int id PK
+        string content_type
+        string title
+        text content
+        string status
+        int created_by FK
+        int updated_by FK
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    content_attachments {
+        int id PK
+        int content_id FK
+        string file_name
+        string s3_key "UK"
+        int file_size
+        string mime_type
+        int order_no
+        datetime created_at
+        datetime updated_at
+    }
+
+    meeting_knowledge_sources {
+        int id PK
+        int meeting_id FK
+        string source_type
+        int source_entity_id
+        string source_label
+        string source_uri
+        string version_tag
+        string content_hash
+        datetime last_synced_at
+        datetime created_at
+        datetime updated_at
+        unique_constraint uq_meeting_knowledge_sources_entity_version "UK(meeting_id, source_type, source_entity_id, version_tag)"
+    }
+
+    meeting_knowledge_chunks {
+        int id PK
+        int meeting_id FK
+        int source_id FK
+        int chunk_index
+        text chunk_text
+        int token_count
+        string embedding_model
+        string embedding_vector_id "UK"
+        json metadata_json
+        datetime created_at
+        datetime updated_at
+        unique_constraint uq_meeting_knowledge_chunks_source_chunk_index "UK(source_id, chunk_index)"
+    }
+
+    meeting_qa_logs {
+        int id PK
+        int meeting_id FK
+        int user_id FK
+        text question
+        text answer
+        json retrieved_chunk_ids
+        string model_name
+        int prompt_tokens
+        int completion_tokens
+        int total_tokens
+        int latency_ms
+        datetime created_at
+    }
+
+    audit_logs {
+        int id PK
+        int actor_user_id FK
+        string actor_role_snapshot
+        string entity_type
+        string entity_id
+        string action
+        json before_json
+        json after_json
+        json changed_fields
+        string result
+        string error_code
+        text error_message
+        string ip_address
+        text user_agent
+        string request_id
+        string trace_id
+        string session_id
+        string reason
+        datetime occurred_at
+    }
+
+    user ||--o{ user_roles : "user_id (RESTRICT)"
+    roles ||--o{ user_roles : "role_id (RESTRICT)"
+    user ||--o{ user_roles : "assigned_by (SET NULL)"
+
+    roles ||--o{ role_permissions : "role_id"
+    permissions ||--o{ role_permissions : "permission_id"
+
+    user ||--o{ organization_memberships : "user_id (RESTRICT)"
+    organizations ||--o{ organization_memberships : "organization_id (CASCADE)"
+    roles ||--o{ organization_memberships : "role_id (RESTRICT)"
+    user ||--o{ organization_memberships : "assigned_by (SET NULL)"
+
+    user ||--o{ meetings : "created_by (RESTRICT)"
+    meetings ||--o{ meeting_attendees : "meeting_id (CASCADE)"
+    user ||--o{ meeting_attendees : "user_id (RESTRICT)"
+
+    meetings ||--o{ agendas : "meeting_id (RESTRICT)"
+    user ||--o{ agendas : "created_by (RESTRICT)"
+    user ||--o{ agendas : "updated_by (SET NULL)"
+
+    agendas ||--o{ agenda_relations : "source_agenda_id (CASCADE)"
+    agendas ||--o{ agenda_relations : "target_agenda_id (CASCADE)"
+    agendas ||--o{ agenda_attachments : "agenda_id (CASCADE)"
+
+    meetings ||--o{ minutes : "meeting_id (RESTRICT)"
+    agendas o|--o{ minutes : "agenda_id (CASCADE)"
+    user ||--o{ minutes : "created_by (RESTRICT)"
+    user ||--o{ minutes : "approved_by (SET NULL)"
+    minutes ||--o{ minute_revisions : "minutes_id (CASCADE)"
+    user ||--o{ minute_revisions : "changed_by (RESTRICT)"
+
+    user ||--o{ notices : "created_by (RESTRICT)"
+    user ||--o{ notices : "updated_by (SET NULL)"
+    notices ||--o{ notice_attachments : "notice_id (CASCADE)"
+
+    user ||--o{ contents : "created_by (RESTRICT)"
+    user ||--o{ contents : "updated_by (SET NULL)"
+    contents ||--o{ content_attachments : "content_id (CASCADE)"
+
+    meetings ||--o{ meeting_knowledge_sources : "meeting_id (CASCADE)"
+    meetings ||--o{ meeting_knowledge_chunks : "meeting_id (CASCADE)"
+    meeting_knowledge_sources ||--o{ meeting_knowledge_chunks : "source_id (CASCADE)"
+
+    meetings ||--o{ meeting_qa_logs : "meeting_id (CASCADE)"
+    user ||--o{ meeting_qa_logs : "user_id (RESTRICT)"
+
+    user ||--o{ audit_logs : "actor_user_id (SET NULL)"

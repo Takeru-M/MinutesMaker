@@ -18,8 +18,8 @@ class Notice(SQLModel, table=True):
     status: str = Field(default="draft", nullable=False, index=True)
     category: str = Field(default="info", nullable=False, index=True)
     is_pinned: bool = Field(default=False, nullable=False)
-    created_by: int = Field(foreign_key="user.id", nullable=False, index=True)
-    updated_by: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_by: int = Field(foreign_key="user.id", nullable=False, index=True, ondelete="RESTRICT")
+    updated_by: Optional[int] = Field(default=None, foreign_key="user.id", ondelete="SET NULL")
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     published_at: Optional[datetime] = Field(default=None)
@@ -30,7 +30,7 @@ class NoticeAttachment(SQLModel, table=True):
     __tablename__ = "notice_attachments"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    notice_id: int = Field(foreign_key="notices.id", nullable=False, index=True)
+    notice_id: int = Field(foreign_key="notices.id", nullable=False, index=True, ondelete="CASCADE")
     file_name: str = Field(nullable=False)
     s3_key: str = Field(nullable=False, unique=True)
     file_size: int = Field(nullable=False)

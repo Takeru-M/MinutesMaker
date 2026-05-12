@@ -9,7 +9,7 @@ import { CONTENT_LIST_ITEMS_PER_PAGE, getContentListPage } from "@/features/cont
 import { useI18n } from "@/features/i18n";
 import type { NoticeListItemResponse } from "@/lib/api-types";
 import { filterNoticeItems } from "@/features/notice/utils/filter-notice-items";
-import { apiFetch } from "@/lib/api-client";
+import { API_QUERY_LIMIT, apiFetch } from "@/lib/api-client";
 
 import { NoticeSearchForm } from "./notice-search-form";
 import styles from "./notice-view.module.css";
@@ -22,7 +22,7 @@ export function NoticeView() {
   useEffect(() => {
     const fetchNotices = async () => {
       try {
-        const response = await apiFetch("/api/v1/notices?limit=500");
+        const response = await apiFetch(`/api/v1/notices?limit=${API_QUERY_LIMIT}`);
         if (!response.ok) {
           return;
         }

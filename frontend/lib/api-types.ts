@@ -110,6 +110,7 @@ export type AgendaDetailResponse = {
   related_past_agenda_ids: number[];
   related_other_agenda_ids: number[];
   attachments: AgendaAttachmentResponse[];
+  meeting_scheduled_at?: string;
 };
 
 export type AgendaPdfUploadResponse = {

@@ -8,6 +8,7 @@ import { Container } from "@/components/ui/container";
 import { useI18n } from "@/features/i18n";
 import type { NoticeDetailResponse } from "@/lib/api-types";
 import { apiFetch } from "@/lib/api-client";
+import { formatFileSize } from "@/lib/date-formatter";
 import styles from "./notice-detail-view.module.css";
 
 type NoticeDetailViewProps = {
@@ -87,12 +88,6 @@ export function NoticeDetailView({ noticeId }: NoticeDetailViewProps) {
       return t("noticeDetailView.categories.warning");
     }
     return t("noticeDetailView.categories.info");
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes}B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
   };
 
   return (

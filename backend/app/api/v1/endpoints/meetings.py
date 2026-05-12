@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session
 
-from app.core.auth_dependencies import require_permissions
+from app.core.auth_dependencies import get_current_auth_context, require_permissions
 from app.crud.meeting import (
     create_meeting,
     delete_meeting,
@@ -60,12 +60,13 @@ def read_meeting_detail(
     meeting_id: int,
     db: Session = Depends(get_session),
     current_user=Depends(require_permissions("meeting.read_detail")),
+    auth_context=Depends(get_current_auth_context),
 ) -> MeetingDetailResponse:
     meeting = get_meeting_by_id(db, meeting_id)
     if meeting is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
-    if not can_access_meeting(db, meeting_id=meeting_id, user=current_user):
+    if not can_access_meeting(db, meeting_id=meeting_id, user=current_user, active_org_id=auth_context.active_organization_id, canonical_role=auth_context.role):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     agendas = list_agendas_by_meeting_id(db, meeting_id)

@@ -16,7 +16,6 @@ export function LoginView() {
   const dispatch = useAppDispatch();
   const { locale, setLocale, t } = useI18n();
   const redirectTarget = searchParams.get("redirect");
-  const agendaSubmitNotice = searchParams.get("notice") === "agenda-submit";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,22 +32,13 @@ export function LoginView() {
     });
   };
 
-  /**
-   * Determine post-login redirect URL based on active organization
-   */
-  const getPostLoginRedirect = (activeOrgId: number | null): string => {
+  const getPostLoginRedirect = (activeOrgId: number | null | undefined): string => {
     if (redirectTarget) {
       return redirectTarget;
     }
-
-    if (agendaSubmitNotice) {
-      return activeOrgId ? `/orgs/${activeOrgId}/agenda/submit` : "/agenda/submit";
-    }
-
     if (activeOrgId) {
-      return `/orgs/${activeOrgId}`;
+      return `/orgs/${activeOrgId}/`;
     }
-
     return "/";
   };
 
@@ -85,7 +75,7 @@ export function LoginView() {
         }),
       );
 
-      const redirectUrl = getPostLoginRedirect(loginData.active_organization_id ?? null);
+      const redirectUrl = getPostLoginRedirect(loginData.active_organization_id ?? currentUser?.active_organization_id);
       router.replace(redirectUrl);
     } catch {
       setErrorMessage(t("login.errors.connection"));
@@ -114,14 +104,6 @@ export function LoginView() {
         <section className={styles.card}>
           <h1 className={styles.title}>{t("login.title")}</h1>
           <p className={styles.description}>{t("login.description")}</p>
-          {agendaSubmitNotice ? (
-            <p className={styles.noticeMessage}>
-              {locale === "ja"
-                ? "議案投稿には個人アカウントでのログインが必要です。個人アカウントでログインしてください。"
-                : "Submitting agendas requires an individual account. Please sign in with your individual account."}
-            </p>
-          ) : null}
-
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.field}>
               <label htmlFor="login-username" className={styles.label}>

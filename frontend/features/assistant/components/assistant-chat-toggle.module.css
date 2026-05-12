@@ -1,0 +1,46 @@
+.toggleButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  padding: 0;
+  color: white;
+}
+
+.toggleButton:hover {
+  background-color: var(--accent);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.toggleButton.active {
+  background-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(0);
+}
+
+.icon {
+  width: 26px;
+  height: 26px;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 10px;
+  height: 10px;
+  background-color: var(--danger);
+  border-radius: 50%;
+  border: 2px solid white;
+}

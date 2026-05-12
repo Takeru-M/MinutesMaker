@@ -37,6 +37,7 @@ def seed_roles_and_permissions(db: Session) -> None:
     roles: dict[str, Role] = {}
     permissions: dict[str, Permission] = {}
 
+    # Create roles from ROLE_DEFINITIONS
     for role_def in ROLE_DEFINITIONS:
         role = db.exec(select(Role).where(Role.name == role_def["name"])).first()
         if role is None:
@@ -45,6 +46,7 @@ def seed_roles_and_permissions(db: Session) -> None:
             db.flush()
         roles[role.name] = role
 
+    # Create permissions
     for name, resource_type, action, description in PERMISSION_DEFINITIONS:
         permission = db.exec(select(Permission).where(Permission.name == name)).first()
         if permission is None:
@@ -58,10 +60,36 @@ def seed_roles_and_permissions(db: Session) -> None:
             db.flush()
         permissions[permission.name] = permission
 
+    # Bind permissions to roles
     for role_name, permission_names in ROLE_PERMISSION_ASSIGNMENTS.items():
         role = roles.get(role_name)
         if role is not None:
             _bind_role_permissions(db, role, permissions, permission_names)
+
+    # Handle backward compatibility: bind legacy role names to same permissions as their canonical roles
+    # admin -> platform_admin, user -> org_user
+    legacy_role_mapping = {
+        LEGACY_ROLE_ADMIN: ROLE_ADMIN,
+        LEGACY_ROLE_USER: ROLE_ORG_USER,
+    }
+    for legacy_role_name, canonical_role_name in legacy_role_mapping.items():
+        legacy_role = db.exec(select(Role).where(Role.name == legacy_role_name)).first()
+        if legacy_role is None:
+            # Create legacy role with same description as canonical role
+            canonical_role_def = next(
+                (rd for rd in ROLE_DEFINITIONS if rd["name"] == canonical_role_name),
+                None,
+            )
+            if canonical_role_def:
+                legacy_role = Role(name=legacy_role_name, description=canonical_role_def["description"])
+                db.add(legacy_role)
+                db.flush()
+                roles[legacy_role_name] = legacy_role
+
+        # Bind same permissions as canonical role
+        if legacy_role is not None:
+            permission_names = ROLE_PERMISSION_ASSIGNMENTS.get(canonical_role_name, frozenset())
+            _bind_role_permissions(db, legacy_role, permissions, permission_names)
 
     db.commit()
 
@@ -83,7 +111,7 @@ def seed_sample_users(db: Session) -> None:
         {
             "username": "org-user-a",
             "password": "Password123!",
-            "role": ROLE_USER,
+            "role": ROLE_ORG_USER,
             "full_name": "Organization User A",
         },
         {
@@ -107,7 +135,7 @@ def seed_sample_users(db: Session) -> None:
         {
             "username": "multi-org-user",
             "password": "Password123!",
-            "role": ROLE_USER,
+            "role": ROLE_ORG_USER,
             "full_name": "Multi Organization User",
         },
     )
@@ -291,8 +319,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "large_facility",
             "meeting_key": "dormitory_assembly_20260420",
-            "meeting_date": datetime(2026, 4, 20, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY,
             "title": "施設改善に関する議案",
             "responsible": "施設管理委員会",
             "description": None,
@@ -304,8 +330,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "large_purchase",
             "meeting_key": "dormitory_assembly_20260420",
-            "meeting_date": datetime(2026, 4, 20, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_DORMITORY_GENERAL_ASSEMBLY,
             "title": "備品購入フロー見直し議案",
             "responsible": "総務委員会",
             "description": None,
@@ -317,8 +341,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "block_disaster",
             "meeting_key": "block_20260413",
-            "meeting_date": datetime(2026, 4, 13, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_BLOCK,
             "title": "防災訓練実施計画議案",
             "responsible": "防災担当",
             "description": None,
@@ -330,8 +352,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "block_budget",
             "meeting_key": "block_20260413",
-            "meeting_date": datetime(2026, 4, 13, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_BLOCK,
             "title": "ブロック予算配分に関する議案",
             "responsible": "会計担当",
             "description": None,
@@ -343,8 +363,6 @@ def seed_sample_agendas(db: Session) -> None:
         {
             "key": "annual_policy",
             "meeting_key": "annual_20260331",
-            "meeting_date": datetime(2026, 3, 31, 18, 0, 0).date(),
-            "meeting_type": MEETING_TYPE_ANNUAL,
             "title": "年次運営方針に関する議案",
             "responsible": "運営委員会",
             "description": None,
@@ -368,8 +386,6 @@ def seed_sample_agendas(db: Session) -> None:
         if agenda is None:
             agenda = Agenda(
                 meeting_id=meeting_id,
-                meeting_date=spec["meeting_date"],
-                meeting_type=spec["meeting_type"],
                 title=spec["title"],
                 responsible=spec["responsible"],
                 description=spec["description"],
@@ -386,8 +402,6 @@ def seed_sample_agendas(db: Session) -> None:
             db.flush()
         else:
             agenda.title = spec["title"]
-            agenda.meeting_date = spec["meeting_date"]
-            agenda.meeting_type = spec["meeting_type"]
             agenda.responsible = spec["responsible"]
             agenda.description = spec["description"]
             agenda.content = spec["content"]

@@ -1,7 +1,8 @@
-import { AgendaFieldName, AgendaFormData, AgendaValidationState } from "@/features/agenda/types/agenda-form";
+import { AgendaFieldName, AgendaFormData, AgendaValidationErrors, AgendaValidationState } from "@/features/agenda/types/agenda-form";
 import { validateRequiredAgendaFields } from "@/features/agenda/validation/agenda-form-validation";
 
 export const VALIDATE_AGENDA_FORM = "agendaValidation/validateAgendaForm" as const;
+export const SET_AGENDA_ERRORS = "agendaValidation/setAgendaErrors" as const;
 export const CLEAR_AGENDA_FIELD_ERROR = "agendaValidation/clearAgendaFieldError" as const;
 export const RESET_AGENDA_VALIDATION = "agendaValidation/resetAgendaValidation" as const;
 
@@ -12,6 +13,11 @@ const initialState: AgendaValidationState = {
 type ValidateAgendaFormAction = {
   type: typeof VALIDATE_AGENDA_FORM;
   payload: AgendaFormData;
+};
+
+type SetAgendaErrorsAction = {
+  type: typeof SET_AGENDA_ERRORS;
+  payload: AgendaValidationErrors;
 };
 
 type ClearAgendaFieldErrorAction = {
@@ -25,11 +31,17 @@ type ResetAgendaValidationAction = {
 
 export type AgendaValidationAction =
   | ValidateAgendaFormAction
+  | SetAgendaErrorsAction
   | ClearAgendaFieldErrorAction
   | ResetAgendaValidationAction;
 
 export const validateAgendaForm = (payload: AgendaFormData): ValidateAgendaFormAction => ({
   type: VALIDATE_AGENDA_FORM,
+  payload,
+});
+
+export const setAgendaErrors = (payload: AgendaValidationErrors): SetAgendaErrorsAction => ({
+  type: SET_AGENDA_ERRORS,
   payload,
 });
 
@@ -51,6 +63,11 @@ export const agendaValidationReducer = (
       return {
         ...state,
         errors: validateRequiredAgendaFields(action.payload),
+      };
+    case SET_AGENDA_ERRORS:
+      return {
+        ...state,
+        errors: action.payload,
       };
     case CLEAR_AGENDA_FIELD_ERROR: {
       if (!state.errors[action.payload]) {

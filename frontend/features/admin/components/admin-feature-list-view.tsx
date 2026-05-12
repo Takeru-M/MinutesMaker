@@ -8,9 +8,8 @@ import { useI18n } from "@/features/i18n";
 import { useAppSelector } from "@/store/hooks";
 import { ForbiddenPage } from "@/components/guards/permission-guard";
 import { useCanInCurrentOrg } from "@/hooks/use-permissions";
+import { ADMIN_ROLES } from "@/lib/permissions";
 import styles from "./admin-feature-list-view.module.css";
-
-const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 export function AdminFeatureListView() {
   const { t } = useI18n();

@@ -685,4 +685,25 @@ export const enMessages: TranslationNode = {
     deleteConfirm: "Delete this meeting minute? This action cannot be undone.",
     deleteFailed: "Failed to delete meeting minutes. Please try again.",
   },
+  assistant: {
+    title: "AI Assistant",
+    toggle: "AI Assistant",
+    placeholder: "Ask a question...",
+    send: "Send",
+    loading: {
+      processing: "Processing...",
+    },
+    emptyState: "Ask a question about the meeting",
+    scope: {
+      label: "Search scope",
+      meetingOnly: "This meeting only",
+      crossMeeting: "Multiple meetings",
+      global: "Global",
+    },
+    confidence: "Confidence",
+    citations: "Citations",
+    errors: {
+      meetingRequired: "Meeting context is required for this scope",
+    },
+  },
 };

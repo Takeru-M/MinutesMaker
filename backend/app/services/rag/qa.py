@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from time import perf_counter
 from typing import Literal
 
+from qdrant_client import models as qdrant_models
 from sqlmodel import Session, select
 
 from app.core.config import settings
@@ -12,6 +15,9 @@ from app.crud.meeting_knowledge import create_qa_log, list_chunks_by_ids, list_s
 from app.models.meeting import Meeting
 from app.models.meeting_knowledge import MeetingQALog
 from app.services.rag.clients import get_collection_name, get_openai_client, get_qdrant_client
+from app.services.rag.history import append_history, get_history
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -41,173 +47,70 @@ class ScoredHit:
     rerank_score: float
 
 
-def answer_meeting_question(
-    session: Session,
-    *,
-    meeting_id: int,
-    user_id: int,
-    question: str,
-    scope: Literal["meeting_only", "cross_meeting", "global"] = "meeting_only",
-    intent: Literal["auto", "context", "lookup", "term"] = "auto",
-) -> AnswerResult:
-    meeting = session.exec(select(Meeting).where(Meeting.id == meeting_id)).first()
-    if meeting is None:
-        raise ValueError("Meeting not found")
+def classify_question(question: str, meeting_id: int | None) -> tuple[str, str]:
+    """Use LLM to determine intent and initial scope for a question.
 
-    if not settings.openai_api_key:
-        raise ValueError("OPENAI_API_KEY is not configured")
-
-    started_at = perf_counter()
-    resolved_intent = _infer_intent(question) if intent == "auto" else intent
-    resolved_scope = _resolve_scope(question=question, requested_scope=scope, intent=resolved_intent)
-
-    query_vector = _embed_question(question)
-    qdrant = get_qdrant_client()
-    collection_name = get_collection_name()
-
-    query_filter = _build_query_filter(meeting_id=meeting_id, scope=resolved_scope)
-
-    retrieval_limit = settings.rag_retrieval_top_k
-    if resolved_intent in {"context", "lookup"}:
-        retrieval_limit = max(retrieval_limit, 12)
-    elif resolved_intent == "term":
-        retrieval_limit = max(retrieval_limit, 8)
-
-    search_result = qdrant.search(
-        collection_name=collection_name,
-        query_vector=query_vector,
-        limit=retrieval_limit,
-        query_filter=query_filter,
-        with_payload=True,
+    Returns (intent, scope) where:
+      intent: "term" | "context" | "lookup"
+      scope: "meeting_only" | "global"
+    """
+    meeting_context = (
+        f"この質問は会議ID {meeting_id} のコンテキストで行われています。"
+        if meeting_id is not None
+        else "特定の会議コンテキストはありません。"
     )
 
-    reranked_hits = _rerank_hits(session, list(search_result), intent=resolved_intent)
-    filtered_hits = [item for item in reranked_hits if item.rerank_score >= settings.rag_score_threshold]
-
-    chunk_ids = [
-        int(item.hit.payload["chunk_id"])
-        for item in filtered_hits
-        if item.hit.payload and "chunk_id" in item.hit.payload
-    ]
-    chunks = list_chunks_by_ids(session, chunk_ids)
-    chunk_by_id = {chunk.id: chunk for chunk in chunks if chunk.id is not None}
-
-    citations: list[Citation] = []
-    context_blocks: list[str] = []
-
-    for item in filtered_hits:
-        hit = item.hit
-        payload = hit.payload or {}
-        chunk_id = int(payload.get("chunk_id", 0))
-        chunk = chunk_by_id.get(chunk_id)
-        if chunk is None:
-            continue
-
-        source_type = str(payload.get("source_type", "unknown"))
-        source_entity_id = int(payload.get("source_entity_id", 0))
-        chunk_index = int(payload.get("chunk_index", 0))
-        snippet = chunk.chunk_text[:220]
-
-        citations.append(
-            Citation(
-                chunk_id=chunk_id,
-                source_type=source_type,
-                source_entity_id=source_entity_id,
-                chunk_index=chunk_index,
-                score=float(item.rerank_score),
-                snippet=snippet,
-            )
+    logger.debug(f"[classify] Calling LLM to classify question - meeting_id={meeting_id}, question={question[:50]}...")
+    try:
+        response = get_openai_client().chat.completions.create(
+            model=settings.llm_model,
+            temperature=0.0,
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "あなたは会議管理システムの質問分類器です。"
+                        "ユーザーの質問を分析し、JSONのみで回答してください。"
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"{meeting_context}\n"
+                        f"質問: {question}\n\n"
+                        "以下のJSONで回答してください:\n"
+                        '{"intent": "term"|"context"|"lookup", "scope": "meeting_only"|"global"}\n\n'
+                        "intent の基準:\n"
+                        "- term: 用語・定義の説明を求めている\n"
+                        "- context: 背景・経緯・理由を求めている\n"
+                        "- lookup: 特定の事実・決定事項・行動を確認している\n\n"
+                        "scope の基準:\n"
+                        "- meeting_only: 特定の会議IDの資料のみで答えられる質問（meeting_idがある場合のみ）\n"
+                        "- global: 複数会議にまたがる・あるいは会議IDが指定されていない質問"
+                    ),
+                },
+            ],
         )
-        context_blocks.append(f"[{len(citations)}] ({source_type}:{source_entity_id}#{chunk_index})\n{chunk.chunk_text}")
+        raw = response.choices[0].message.content or "{}"
+        data = json.loads(raw)
+        logger.debug(f"[classify] LLM classification result - raw={raw}")
+    except Exception as exc:
+        logger.warning(f"[classify] LLM classification failed, using defaults - error={exc}", exc_info=True)
+        data = {}
 
-    related_sources = _build_related_sources(session, filtered_hits)
+    intent = data.get("intent", "lookup")
+    if intent not in {"term", "context", "lookup"}:
+        intent = "lookup"
 
-    if not context_blocks:
-        fallback = "該当する会議資料から回答根拠を見つけられませんでした。質問を具体化して再度お試しください。"
-        _save_qa_log(
-            session,
-            meeting_id=meeting_id,
-            user_id=user_id,
-            question=question,
-            answer=fallback,
-            citations=citations,
-            model_name=settings.llm_model,
-            prompt_tokens=None,
-            completion_tokens=None,
-            total_tokens=None,
-            latency_ms=int((perf_counter() - started_at) * 1000),
-        )
-        session.commit()
-        return AnswerResult(
-            intent=resolved_intent,
-            scope=resolved_scope,
-            answer=fallback,
-            model_name=settings.llm_model,
-            confidence=0.0,
-            citations=[],
-            related_sources=related_sources,
-        )
+    scope = data.get("scope", "global")
+    if scope not in {"meeting_only", "global"}:
+        scope = "global"
 
-    client = get_openai_client()
-    response = client.chat.completions.create(
-        model=settings.llm_model,
-        temperature=0.1,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "あなたは会議アシスタントです。与えられたコンテキストのみを根拠に回答し、"
-                    "根拠が不足する場合は不足している旨を明示してください。"
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"会議ID: {meeting_id}\n"
-                    f"質問: {question}\n\n"
-                    "以下のコンテキストを根拠に回答してください。"
-                    "文末に参照番号を [1], [2] の形式で示してください。\n\n"
-                    + "\n\n".join(context_blocks)
-                ),
-            },
-        ],
-    )
+    if meeting_id is None:
+        scope = "global"
 
-    answer = (response.choices[0].message.content or "").strip() or "回答を生成できませんでした。"
-
-    usage = response.usage
-    prompt_tokens = usage.prompt_tokens if usage else None
-    completion_tokens = usage.completion_tokens if usage else None
-    total_tokens = usage.total_tokens if usage else None
-
-    _save_qa_log(
-        session,
-        meeting_id=meeting_id,
-        user_id=user_id,
-        question=question,
-        answer=answer,
-        citations=citations,
-        model_name=settings.llm_model,
-        prompt_tokens=prompt_tokens,
-        completion_tokens=completion_tokens,
-        total_tokens=total_tokens,
-        latency_ms=int((perf_counter() - started_at) * 1000),
-    )
-    session.commit()
-
-    confidence = 0.0
-    if citations:
-        confidence = min(1.0, sum(max(0.0, c.score) for c in citations[:5]) / max(1, min(len(citations), 5)))
-
-    return AnswerResult(
-        intent=resolved_intent,
-        scope=resolved_scope,
-        answer=answer,
-        model_name=settings.llm_model,
-        confidence=confidence,
-        citations=citations,
-        related_sources=related_sources,
-    )
+    return intent, scope
 
 
 def _embed_question(question: str) -> list[float]:
@@ -216,56 +119,16 @@ def _embed_question(question: str) -> list[float]:
     return response.data[0].embedding
 
 
-def _infer_intent(question: str) -> str:
-    normalized = question.lower()
-    if any(token in normalized for token in ["意味", "とは", "用語", "definition", "term"]):
-        return "term"
-    if any(token in normalized for token in ["背景", "文脈", "経緯", "なぜ", "why", "context"]):
-        return "context"
-    return "lookup"
-
-
-def resolve_question_plan(
-    *,
-    question: str,
-    requested_scope: Literal["meeting_only", "cross_meeting", "global"] = "meeting_only",
-    requested_intent: Literal["auto", "context", "lookup", "term"] = "auto",
-) -> tuple[Literal["context", "lookup", "term"], Literal["meeting_only", "cross_meeting", "global"]]:
-    resolved_intent: Literal["context", "lookup", "term"]
-    if requested_intent == "auto":
-        resolved_intent = _infer_intent(question)
-    else:
-        resolved_intent = requested_intent
-
-    resolved_scope = _resolve_scope(question=question, requested_scope=requested_scope, intent=resolved_intent)
-    return resolved_intent, resolved_scope
-
-
-def _resolve_scope(*, question: str, requested_scope: str, intent: str) -> str:
-    if requested_scope != "meeting_only":
-        return requested_scope
-
-    normalized = question.lower()
-    if intent in {"context", "lookup", "term"} and any(
-        token in normalized
-        for token in ["過去", "以前", "履歴", "他会議", "これまで", "history", "past", "previous"]
-    ):
-        return "cross_meeting"
-    return requested_scope
-
-
-def _build_query_filter(*, meeting_id: int, scope: str) -> dict | None:
-    if scope == "meeting_only":
-        return {"must": [{"key": "meeting_id", "match": {"value": meeting_id}}]}
-    if scope == "cross_meeting":
-        return {
-            "must": [
-                {
-                    "key": "source_type",
-                    "match": {"any": ["meeting", "agenda", "minutes", "notice", "content", "content_attachment"]},
-                }
+def _build_query_filter(*, meeting_id: int | None, scope: str) -> qdrant_models.Filter | None:
+    if scope == "meeting_only" and meeting_id is not None:
+        return qdrant_models.Filter(
+            must=[
+                qdrant_models.FieldCondition(
+                    key="meeting_id",
+                    match=qdrant_models.MatchValue(value=meeting_id),
+                )
             ]
-        }
+        )
     return None
 
 
@@ -293,10 +156,6 @@ def _rerank_hits(session: Session, hits: list, *, intent: str) -> list[ScoredHit
         "context": {"minutes": 0.02, "agenda": 0.02},
     }
 
-    scored: list[ScoredHit] = []
-    used_source_type_count: dict[str, int] = {}
-    used_source_id_count: dict[int, int] = {}
-
     prelim: list[tuple[object, float, str, int | None]] = []
     for hit in hits:
         payload = hit.payload or {}
@@ -311,6 +170,10 @@ def _rerank_hits(session: Session, hits: list, *, intent: str) -> list[ScoredHit
         prelim.append((hit, score, source_type, source_id))
 
     prelim.sort(key=lambda item: item[1], reverse=True)
+
+    scored: list[ScoredHit] = []
+    used_source_type_count: dict[str, int] = {}
+    used_source_id_count: dict[int, int] = {}
 
     for hit, score, source_type, source_id in prelim:
         type_count = used_source_type_count.get(source_type, 0)
@@ -380,7 +243,7 @@ def _build_related_sources(session: Session, hits: list[ScoredHit]) -> list[dict
 def _save_qa_log(
     session: Session,
     *,
-    meeting_id: int,
+    meeting_id: int | None,
     user_id: int,
     question: str,
     answer: str,
@@ -404,3 +267,109 @@ def _save_qa_log(
         latency_ms=latency_ms,
     )
     create_qa_log(session, log)
+
+
+def build_answer(
+    session: Session,
+    *,
+    meeting_id: int | None,
+    user_id: int,
+    question: str,
+    intent: str,
+    scope: str,
+    citations: list[Citation],
+    context_blocks: list[str],
+    related_sources: list[dict],
+    started_at: float,
+) -> AnswerResult:
+    """Generate an LLM answer from retrieved context blocks and persist the log."""
+    history_key = meeting_id if meeting_id is not None else 0
+    history_messages = get_history(user_id, history_key)
+
+    if not context_blocks:
+        fallback = "該当する資料から回答の根拠を見つけられませんでした。質問を具体化して再度お試しください。"
+        _save_qa_log(
+            session,
+            meeting_id=meeting_id,
+            user_id=user_id,
+            question=question,
+            answer=fallback,
+            citations=citations,
+            model_name=settings.llm_model,
+            prompt_tokens=None,
+            completion_tokens=None,
+            total_tokens=None,
+            latency_ms=int((perf_counter() - started_at) * 1000),
+        )
+        session.commit()
+        append_history(user_id, history_key, question, fallback)
+        return AnswerResult(
+            intent=intent,
+            scope=scope,
+            answer=fallback,
+            model_name=settings.llm_model,
+            confidence=0.0,
+            citations=[],
+            related_sources=related_sources,
+        )
+
+    logger.debug(f"[build_answer] Calling LLM for answer - model={settings.llm_model}, context_blocks={len(context_blocks)}, citations={len(citations)}")
+    meeting_context_line = f"会議ID: {meeting_id}\n" if meeting_id is not None else ""
+    llm_start = perf_counter()
+    response = get_openai_client().chat.completions.create(
+        model=settings.llm_model,
+        temperature=0.1,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "あなたは会議アシスタントです。与えられたコンテキストのみを根拠に回答し、"
+                    "根拠が不足する場合は不足している旨を明示してください。"
+                ),
+            },
+            *history_messages,
+            {
+                "role": "user",
+                "content": (
+                    f"{meeting_context_line}"
+                    f"質問: {question}\n\n"
+                    "以下のコンテキストを根拠に回答してください。"
+                    "文末に参照番号を [1], [2] の形式で示してください。\n\n"
+                    + "\n\n".join(context_blocks)
+                ),
+            },
+        ],
+    )
+
+    answer = (response.choices[0].message.content or "").strip() or "回答を生成できませんでした。"
+    logger.debug(f"[build_answer] LLM responded - latency={int((perf_counter() - llm_start) * 1000)}ms, answer_length={len(answer)}")
+    usage = response.usage
+    _save_qa_log(
+        session,
+        meeting_id=meeting_id,
+        user_id=user_id,
+        question=question,
+        answer=answer,
+        citations=citations,
+        model_name=settings.llm_model,
+        prompt_tokens=usage.prompt_tokens if usage else None,
+        completion_tokens=usage.completion_tokens if usage else None,
+        total_tokens=usage.total_tokens if usage else None,
+        latency_ms=int((perf_counter() - started_at) * 1000),
+    )
+    session.commit()
+    append_history(user_id, history_key, question, answer)
+
+    confidence = 0.0
+    if citations:
+        confidence = min(1.0, sum(max(0.0, c.score) for c in citations[:5]) / max(1, min(len(citations), 5)))
+
+    return AnswerResult(
+        intent=intent,
+        scope=scope,
+        answer=answer,
+        model_name=settings.llm_model,
+        confidence=confidence,
+        citations=citations,
+        related_sources=related_sources,
+    )

@@ -8,9 +8,9 @@ import { ForbiddenPage } from "@/components/guards/permission-guard";
 
 type OrgLayoutProps = {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     orgId: string;
-  };
+  }>;
 };
 
 /**
@@ -23,6 +23,8 @@ type OrgLayoutProps = {
  * 4. Renders children if everything is OK
  */
 export default function OrgLayout({ children, params }: OrgLayoutProps) {
+  const { orgId: orgIdParam } = React.use(params);
+
   // Sync orgId from URL to Redux state
   useOrgIdSync();
 
@@ -31,7 +33,7 @@ export default function OrgLayout({ children, params }: OrgLayoutProps) {
   const memberships = useAppSelector(selectMemberships);
 
   // Parse orgId from params
-  const orgId = parseInt(params.orgId, 10);
+  const orgId = parseInt(orgIdParam, 10);
 
   // Check if orgId is valid
   if (isNaN(orgId)) {

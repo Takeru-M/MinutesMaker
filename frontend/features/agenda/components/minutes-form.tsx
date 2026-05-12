@@ -8,6 +8,8 @@ import { apiFetch } from "@/lib/api-client";
 import type { Minute } from "./minutes-list";
 import styles from "./minutes-form.module.css";
 
+const SUCCESS_MESSAGE_TIMEOUT_MS = 3000;
+
 type MinutesFormProps = {
   agendaId: string;
   onMinuteAdded?: () => void;
@@ -50,7 +52,7 @@ export function MinutesForm({
   useEffect(() => {
     // Clear messages after 3 seconds
     if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(null), 3000);
+      const timer = setTimeout(() => setSuccessMessage(null), SUCCESS_MESSAGE_TIMEOUT_MS);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);

@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
 
 from app.core.config import settings
-from app.core.constants import ROLE_CANONICAL_MAP, ROLE_PERMISSION_ASSIGNMENTS
+from app.core.constants import ROLE_CANONICAL_MAP, ROLE_PERMISSION_ASSIGNMENTS, ROLE_PLATFORM_ADMIN
 from app.core.security import decode_token, validate_token_type
 from app.crud.organization import get_primary_active_membership, get_user_role_for_organization
 from app.crud.user import get_user_by_username
@@ -85,7 +85,8 @@ def _get_auth_context(
                 role = _canonical_role(membership_role)
 
     # Validate that user has membership in the active organization
-    if active_organization_id is not None:
+    # Exception: platform_admin users can access any organization
+    if active_organization_id is not None and _canonical_role(role) != ROLE_PLATFORM_ADMIN:
         membership_role = get_user_role_for_organization(
             db,
             user_id=user.id or 0,

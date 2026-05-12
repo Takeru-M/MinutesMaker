@@ -14,11 +14,12 @@ import type {
   NoticeStatus,
   NoticeUpdateRequest,
 } from "@/lib/api-types";
+import { useI18n } from "@/features/i18n";
+import { formatJaDateTime, formatJaDateTimeLocal } from "@/lib/date-formatter";
+import { ADMIN_ROLES } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import { AdminListSearchBar } from "./admin-list-search-bar";
 import styles from "./admin-notice-management-page-view.module.css";
-
-const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 type NoticeFormState = {
   title: string;
@@ -37,43 +38,6 @@ const EMPTY_FORM: NoticeFormState = {
   isPinned: false,
   publishedAt: "",
 };
-
-function formatDateTime(value: string | null | undefined): string {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function formatDateTimeLocal(value: string | null | undefined): string {
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
 
 function categoryLabel(category: NoticeFormState["category"]): string {
   if (category === "important") {
@@ -125,7 +89,7 @@ function toFormState(notice: NoticeAdminListItemResponse | NoticeAdminDetailResp
     category: notice.category,
     status: notice.status,
     isPinned: notice.is_pinned,
-    publishedAt: formatDateTimeLocal(notice.published_at),
+    publishedAt: formatJaDateTimeLocal(notice.published_at),
   };
 }
 
@@ -144,6 +108,7 @@ function AdminNoticeShell({
 }) {
   const router = useRouter();
   const auth = useAppSelector((state) => state.auth);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!auth.isAuthenticated) {
@@ -167,7 +132,7 @@ function AdminNoticeShell({
         <main className={styles.main}>
                     <div className={styles.breadcrumb}>
                       <Link href="/admin/features" className={styles.breadcrumbLink}>
-                        管理者機能一覧
+                        {t("adminFeatureCommon.featureList")}
                       </Link>
                       <span className={styles.breadcrumbCurrent}>/ {title}</span>
                     </div>
@@ -481,8 +446,8 @@ export function AdminNoticeCreatePublishPageView() {
                             {notice.is_pinned ? "固定中" : "-"}
                           </span>
                         </td>
-                        <td>{formatDateTime(notice.published_at)}</td>
-                        <td>{formatDateTime(notice.updated_at)}</td>
+                        <td>{formatJaDateTime(notice.published_at)}</td>
+                        <td>{formatJaDateTime(notice.updated_at)}</td>
                         <td>
                           <div className={styles.tableActions}>
                             <button type="button" className={styles.secondaryButton} onClick={() => editNotice(notice)}>

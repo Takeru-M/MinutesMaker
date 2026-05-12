@@ -1,18 +1,18 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
-from typing import Literal
 
 
 class MeetingKnowledgeIngestResponse(BaseModel):
-    meeting_id: int
+    meeting_id: Optional[int]
     indexed_sources: int
     indexed_chunks: int
     skipped_sources: int
 
 
-class MeetingQARequest(BaseModel):
+class AssistantQARequest(BaseModel):
     question: str = Field(..., min_length=2, max_length=4000)
-    scope: Literal["meeting_only", "cross_meeting", "global"] = "meeting_only"
-    intent: Literal["auto", "context", "lookup", "term"] = "auto"
+    meeting_id: Optional[int] = None
 
 
 class MeetingQACitationResponse(BaseModel):
@@ -28,12 +28,12 @@ class MeetingQARelatedSourceResponse(BaseModel):
     source_type: str
     source_entity_id: int
     title: str
-    meeting_id: int
+    meeting_id: Optional[int]
     score: float
 
 
-class MeetingQAResponse(BaseModel):
-    meeting_id: int
+class AssistantQAResponse(BaseModel):
+    meeting_id: Optional[int]
     question: str
     intent: str
     scope: str
@@ -42,3 +42,18 @@ class MeetingQAResponse(BaseModel):
     confidence: float
     citations: list[MeetingQACitationResponse]
     related_sources: list[MeetingQARelatedSourceResponse]
+
+
+class AssistantQAJobEnqueueResponse(BaseModel):
+    job_id: str
+    status: str
+    job_type: str
+
+
+class AssistantQAJobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    job_type: str
+    qa_result: Optional[AssistantQAResponse] = None
+    ingest_result: Optional[MeetingKnowledgeIngestResponse] = None
+    error: Optional[str] = None

@@ -17,6 +17,9 @@
   --danger: #dc2626;
   --danger-border: #fee2e2;
   --danger-surface: #fff5f5;
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 12px 24px rgba(15, 23, 42, 0.08);
   color-scheme: light;
 }
 
@@ -44,6 +47,9 @@
   --danger: #f87171;
   --danger-border: #7f1d1d;
   --danger-surface: rgba(220, 38, 38, 0.2);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.16);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.32);
   color-scheme: dark;
 }
 

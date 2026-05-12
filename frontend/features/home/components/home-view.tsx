@@ -7,7 +7,7 @@ import { Container } from "@/components/ui/container";
 import { Header, Footer } from "@/components/layout";
 import type { AgendaListItemResponse, MeetingListItemResponse, NoticeListItemResponse } from "@/lib/api-types";
 import { useI18n } from "@/features/i18n";
-import { apiFetch } from "@/lib/api-client";
+import { API_QUERY_LIMIT, apiFetch } from "@/lib/api-client";
 import { useAppSelector } from "@/store/hooks";
 import styles from "./home-view.module.css";
 
@@ -33,7 +33,7 @@ export function HomeView() {
 
     const fetchNotices = async () => {
       try {
-        const response = await apiFetch("/api/v1/notices?limit=500");
+        const response = await apiFetch(`/api/v1/notices?limit=${API_QUERY_LIMIT}`);
         if (response.ok) {
           const notices = (await response.json()) as NoticeListItemResponse[];
           setLatestNotices(notices.slice(0, 4));

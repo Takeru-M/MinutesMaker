@@ -8,10 +8,10 @@ import { Container } from "@/components/ui/container";
 import { useI18n } from "@/features/i18n";
 import { useTheme } from "@/features/theme";
 import { logout } from "@/lib/api-client";
+import { ADMIN_ROLES } from "@/lib/permissions";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutSucceeded } from "@/store/slices/auth-slice";
 import styles from "./header.module.css";
-const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 export function Header() {
   const router = useRouter();

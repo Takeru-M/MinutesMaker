@@ -92,7 +92,9 @@ export function AgendaDetailView({ agendaId }: AgendaDetailViewProps) {
     [locale],
   );
 
-  const isMinutesMutationAllowed = agenda ? isWithinMinutesMutationWindow(agenda.meeting_date) : false;
+  const isMinutesMutationAllowed = agenda
+    ? isWithinMinutesMutationWindow(agenda.meeting_scheduled_at ?? agenda.meeting_date)
+    : false;
 
   const formatDateTime = (value: string | null) => {
     if (!value) {
@@ -167,9 +169,9 @@ export function AgendaDetailView({ agendaId }: AgendaDetailViewProps) {
                   <tbody>
                     <tr>
                       <th>{t("agendaDetailView.fields.meetingDate")}</th>
-                      <td>{formatDate(agenda.meeting_date)}</td>
+                      <td>{agenda.meeting_scheduled_at ? formatDate(agenda.meeting_scheduled_at) : "-"}</td>
                       <th>{t("agendaDetailView.fields.meetingType")}</th>
-                      <td>{formatMeetingType(agenda.meeting_type)}</td>
+                      <td>{agenda.meeting_type ? formatMeetingType(agenda.meeting_type) : "-"}</td>
                     </tr>
                     <tr>
                       <th>{t("agendaDetailView.fields.responsible")}</th>

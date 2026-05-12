@@ -3,10 +3,11 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at 20% 10%, #dbeafe 0%, transparent 40%),
-    radial-gradient(circle at 80% 80%, #fde68a 0%, transparent 42%),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 20% 10%, var(--accent-soft) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 42%);
+  background-attachment: fixed;
   overflow: hidden;
 }
 
@@ -24,13 +25,13 @@
 .bgGlowTop {
   top: -140px;
   right: -80px;
-  background: #60a5fa;
+  background: var(--accent);
 }
 
 .bgGlowBottom {
   left: -120px;
   bottom: -160px;
-  background: #f59e0b;
+  background: rgba(139, 92, 246, 0.6);
 }
 
 .main {
@@ -47,18 +48,18 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   margin-bottom: 16px;
 }
 
 .breadcrumbLink {
-  color: #3b82f6;
+  color: var(--accent);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .breadcrumbLink:hover {
-  color: #2563eb;
+  color: var(--accent);
   text-decoration: underline;
 }
 
@@ -73,21 +74,21 @@
 }
 
 .breadcrumbSeparator {
-  color: #cbd5e1;
+  color: var(--border);
 }
 
 .breadcrumbCurrent {
-  color: #1e293b;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .hero,
 .listSection {
-  border: 1px solid #dbe2ea;
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
   backdrop-filter: blur(10px);
   border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-md);
 }
 
 .hero {
@@ -102,8 +103,8 @@
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 700;
-  color: #0f172a;
-  background: #e2e8f0;
+  color: var(--text-primary);
+  background: var(--surface-muted);
   margin: 0;
 }
 
@@ -112,13 +113,13 @@
   font-size: clamp(1.6rem, 3.2vw, 2.4rem);
   line-height: 1.2;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .description {
   margin: 0;
   max-width: 740px;
-  color: #1e293b;
+  color: var(--text-secondary);
   line-height: 1.8;
 }
 
@@ -127,18 +128,18 @@
 }
 
 .searchSection {
-  border: 1px solid #dbe2ea;
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
   backdrop-filter: blur(10px);
   border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-md);
   padding: 20px;
 }
 
 .searchTitle {
   margin: 0;
   font-size: 1.1rem;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .searchForm {
@@ -156,23 +157,23 @@
 .searchLabel {
   font-size: 12px;
   font-weight: 700;
-  color: #334155;
+  color: var(--text-secondary);
 }
 
 .searchInput {
   width: 100%;
   min-height: 40px;
   padding: 8px 10px;
-  border: 1px solid #dbe2ea;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  color: #0f172a;
-  background: #ffffff;
+  color: var(--text-primary);
+  background: var(--surface);
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .searchActions {
@@ -195,23 +196,24 @@
 }
 
 .searchPrimaryButton {
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--background);
 }
 
 .searchPrimaryButton:hover {
-  background: #1d4ed8;
+  background: var(--accent);
+  opacity: 0.9;
 }
 
 .searchSecondaryButton {
-  background: #ffffff;
-  color: #334155;
-  border-color: #dbe2ea;
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-color: var(--border);
 }
 
 .searchSecondaryButton:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  background: var(--surface-muted);
+  border-color: var(--border-strong);
 }
 
 .sectionHeader {
@@ -225,21 +227,21 @@
 .sectionTitle {
   margin: 0;
   font-size: 1.2rem;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .sectionMeta {
   margin: 0;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
 .emptyState {
-  border: 1px solid #dbe2ea;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: 12px;
   padding: 24px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .scheduleList {
@@ -255,9 +257,9 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  border: 1px solid #dbe2ea;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 16px;
 }
 
@@ -270,18 +272,18 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #0284c7;
+  color: var(--accent);
 }
 
 .scheduleTitle {
   margin: 8px 0 0;
   font-size: 1rem;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .scheduleSummary {
   margin: 8px 0 0;
-  color: #475569;
+  color: var(--text-secondary);
   line-height: 1.7;
 }
 
@@ -292,8 +294,8 @@
   justify-content: center;
   padding: 6px 10px;
   border-radius: 9999px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 12px;
   font-weight: 700;
 }
@@ -311,10 +313,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #dbe2ea;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #ffffff;
-  color: #334155;
+  background: var(--surface);
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
   font-weight: 600;
@@ -322,14 +324,14 @@
 }
 
 .paginationButton:hover {
-  border-color: #94a3b8;
-  background: #f8fafc;
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
 }
 
 .paginationButtonActive {
-  border-color: #3b82f6;
-  background: #dbeafe;
-  color: #1d4ed8;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 @media (max-width: 768px) {

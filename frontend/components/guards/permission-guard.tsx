@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import { useCanInCurrentOrg, useCanAnyInCurrentOrg } from "@/hooks/use-permissions";
 import { useAppSelector } from "@/store/hooks";
-import { selectIsAuthenticated, selectCurrentOrgId } from "@/store/selectors/auth";
+import { selectIsAuthenticated, selectCurrentOrgId, selectCanInCurrentOrg } from "@/store/selectors/auth";
 import { Permission } from "@/lib/permissions";
 
 type GuardProps = {
@@ -62,9 +61,15 @@ export function PermissionGuard({
 }: GuardProps): React.ReactNode {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const currentOrgId = useAppSelector(selectCurrentOrgId);
-  const canWithSingle = permission ? useCanInCurrentOrg(permission) : true;
-  const canWithAll = permissions ? permissions.every((p) => useCanInCurrentOrg(p)) : true;
-  const canWithAny = anyPermission ? useCanAnyInCurrentOrg(...anyPermission) : true;
+  const canWithSingle = useAppSelector((state) =>
+    permission ? selectCanInCurrentOrg(state, permission) : true,
+  );
+  const canWithAll = useAppSelector((state) =>
+    permissions ? permissions.every((p) => selectCanInCurrentOrg(state, p)) : true,
+  );
+  const canWithAny = useAppSelector((state) =>
+    anyPermission ? anyPermission.some((p) => selectCanInCurrentOrg(state, p)) : true,
+  );
 
   // Check authentication
   if (!isAuthenticated) {

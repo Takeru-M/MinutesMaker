@@ -39,7 +39,7 @@ export function AgendaListView() {
           const agendas = (await response.json()) as AgendaListItemResponse[];
           const converted: ContentListAgendaItem[] = agendas.map((item) => ({
             id: item.id.toString(),
-            date: item.meeting_scheduled_at ?? item.meeting_date,
+            date: item.meeting_scheduled_at,
             source: item.meeting_title,
             title: item.title,
           }));

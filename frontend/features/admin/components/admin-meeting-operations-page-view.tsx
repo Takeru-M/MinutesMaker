@@ -31,9 +31,9 @@ import {
 } from "../types/meeting-operations";
 import { AdminListSearchBar } from "./admin-list-search-bar";
 import { AdminFeaturePageShell } from "./admin-feature-page-shell";
+import { formatFileSize, formatJaDate, formatJaDateTime } from "@/lib/date-formatter";
+import { ADMIN_ROLES } from "@/lib/permissions";
 import styles from "./admin-meeting-operations-page-view.module.css";
-
-const ADMIN_ROLES = new Set(["platform_admin", "org_admin", "admin"]);
 
 type MeetingOperationsFeature = "meeting" | "agenda";
 
@@ -81,48 +81,6 @@ async function readErrorMessage(response: Response, fallback: string): Promise<s
   } catch {
     return fallback;
   }
-}
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function formatAgendaDate(value: string | null | undefined): string {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
 }
 
 function meetingTypeLabel(value: string): string {
@@ -209,7 +167,7 @@ function MeetingManagementSection({
                   <tr key={meeting.id}>
                     <td>{meeting.id}</td>
                     <td>{meeting.title}</td>
-                    <td>{formatDate(meeting.scheduled_at)}</td>
+                    <td>{formatJaDateTime(meeting.scheduled_at)}</td>
                     <td>{meetingTypeLabel(meeting.meeting_type)}</td>
                     <td>
                       <div className={styles.tableActions}>
@@ -464,7 +422,7 @@ function AgendaManagementSection({
                   <tr key={agenda.id}>
                     <td>{agenda.id}</td>
                     <td>{agenda.title}</td>
-                    <td>{formatAgendaDate(agenda.meeting_scheduled_at)}</td>
+                    <td>{formatJaDate(agenda.meeting_scheduled_at)}</td>
                     <td>{agendaMeetingTypeLabel(agenda.meeting_type)}</td>
                     <td>
                       <div className={styles.tableActions}>
@@ -806,7 +764,7 @@ export function AdminMeetingOperationsPageView() {
     return meetings.filter((meeting) => {
       const haystack = [
         meeting.title,
-        formatDate(meeting.scheduled_at),
+        formatJaDateTime(meeting.scheduled_at),
         meetingTypeLabel(meeting.meeting_type),
         meeting.location ?? "",
       ]

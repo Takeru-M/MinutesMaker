@@ -10,22 +10,11 @@ class Agenda(SQLModel, table=True):
     __table_args__ = (
         CheckConstraint("status IN ('draft', 'published', 'archived')", name="ck_agendas_status"),
         CheckConstraint("priority BETWEEN 1 AND 5", name="ck_agendas_priority"),
-        CheckConstraint(
-            "meeting_type IN ('dormitory_general_assembly', 'block', 'annual')",
-            name="ck_agendas_meeting_type",
-        ),
         UniqueConstraint("meeting_id", "order_no", name="uq_agendas_meeting_order"),
-        ForeignKeyConstraint(
-            ["meeting_id", "meeting_type"],
-            ["meetings.id", "meetings.meeting_type"],
-            name="fk_agendas_meeting_id_meeting_type",
-        ),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    meeting_id: int = Field(foreign_key="meetings.id", nullable=False, index=True)
-    meeting_date: date = Field(nullable=False, index=True)
-    meeting_type: str = Field(nullable=False, index=True)
+    meeting_id: int = Field(foreign_key="meetings.id", nullable=False, index=True, ondelete="RESTRICT")
     title: str = Field(nullable=False, index=True)
     responsible: Optional[str] = Field(default=None)
     description: Optional[str] = Field(default=None)
@@ -38,8 +27,8 @@ class Agenda(SQLModel, table=True):
     pdf_url: Optional[str] = Field(default=None)
     order_no: int = Field(default=1, nullable=False)
     is_active: bool = Field(default=True, nullable=False)
-    created_by: int = Field(foreign_key="user.id", nullable=False, index=True)
-    updated_by: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_by: int = Field(foreign_key="user.id", nullable=False, index=True, ondelete="RESTRICT")
+    updated_by: Optional[int] = Field(default=None, foreign_key="user.id", ondelete="SET NULL")
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     published_at: Optional[datetime] = Field(default=None)
